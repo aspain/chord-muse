@@ -8,7 +8,13 @@ export const GROOVES = [
     pattern: {
       kick: [0, 8],
       snare: [4, 12],
-      hat: [0, 2, 4, 6, 8, 10, 12, 14]
+      hat: [0, 2, 4, 6, 8, 10, 12, 14],
+      chordStrums: [
+        { step: 0, accent: 1, reverse: false },
+        { step: 4, accent: 0.65, reverse: false },
+        { step: 8, accent: 0.85, reverse: false },
+        { step: 12, accent: 0.65, reverse: true }
+      ]
     }
   },
   {
@@ -18,9 +24,16 @@ export const GROOVES = [
     beatsPerBar: 4,
     subdivisionsPerBeat: 4,
     pattern: {
-      kick: [0, 10],
+      kick: [0, 6, 10, 14],
       snare: [4, 12],
-      hat: [0, 2, 4, 6, 8, 10, 12, 14]
+      hat: [0, 4, 8, 12],
+      shaker: [2, 6, 10, 14],
+      chordStrums: [
+        { step: 0, accent: 1, reverse: false },
+        { step: 6, accent: 0.5, reverse: true },
+        { step: 8, accent: 0.8, reverse: false },
+        { step: 14, accent: 0.45, reverse: true }
+      ]
     }
   },
   {
@@ -32,7 +45,12 @@ export const GROOVES = [
     pattern: {
       kick: [0],
       snare: [4, 8],
-      hat: [0, 2, 4, 6, 8, 10]
+      hat: [0, 2, 4, 6, 8, 10],
+      chordStrums: [
+        { step: 0, accent: 1, reverse: false },
+        { step: 4, accent: 0.58, reverse: false },
+        { step: 8, accent: 0.58, reverse: true }
+      ]
     }
   },
   {
@@ -44,7 +62,13 @@ export const GROOVES = [
     pattern: {
       kick: [0, 6],
       snare: [4, 10],
-      hat: [0, 2, 4, 6, 8, 10]
+      hat: [0, 2, 4, 6, 8, 10],
+      chordStrums: [
+        { step: 0, accent: 1, reverse: false },
+        { step: 4, accent: 0.5, reverse: true },
+        { step: 6, accent: 0.82, reverse: false },
+        { step: 10, accent: 0.45, reverse: true }
+      ]
     }
   }
 ];
@@ -56,16 +80,32 @@ function pulseGain(gainNode, time, peak, decay = 0.12) {
   gainNode.gain.exponentialRampToValueAtTime(0.0001, time + decay);
 }
 
+const OPEN_STRING_MIDI = [40, 45, 50, 55, 59, 64];
+
+function midiToFrequency(midi) {
+  return 440 * (2 ** ((midi - 69) / 12));
+}
+
+export function getChordPreviewFrequencies(shape) {
+  return shape.frets
+    .map((fret, index) => (fret >= 0 ? midiToFrequency(OPEN_STRING_MIDI[index] + fret) : null))
+    .filter(Boolean);
+}
+
 export class AudioEngine {
-  constructor(onBeat) {
-    this.onBeat = onBeat;
+  constructor(onPulse) {
+    this.onPulse = onPulse;
     this.audioContext = null;
     this.noiseBuffer = null;
     this.tempo = 92;
     this.groove = GROOVES[1];
+    this.playDrums = true;
+    this.playChords = false;
+    this.chordSequence = [];
     this.schedulerId = null;
     this.isPlaying = false;
     this.currentStep = 0;
+    this.currentBar = 0;
     this.nextStepTime = 0;
   }
 
@@ -76,6 +116,15 @@ export class AudioEngine {
   setGroove(grooveId) {
     const groove = GROOVES.find((item) => item.id === grooveId);
     if (groove) this.groove = groove;
+  }
+
+  setTransportMode({ drums, chords }) {
+    this.playDrums = Boolean(drums);
+    this.playChords = Boolean(chords);
+  }
+
+  setChordSequence(sequence) {
+    this.chordSequence = Array.isArray(sequence) ? sequence : [];
   }
 
   async ensureContext() {
@@ -134,6 +183,20 @@ export class AudioEngine {
     noise.stop(time + 0.03);
   }
 
+  triggerShaker(time) {
+    const noise = this.audioContext.createBufferSource();
+    noise.buffer = this.noiseBuffer;
+    const filter = this.audioContext.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 6200;
+    filter.Q.value = 1.8;
+    const gain = this.audioContext.createGain();
+    pulseGain(gain, time, 0.03, 0.045);
+    noise.connect(filter).connect(gain).connect(this.audioContext.destination);
+    noise.start(time);
+    noise.stop(time + 0.05);
+  }
+
   triggerClick(time, accent) {
     const osc = this.audioContext.createOscillator();
     const gain = this.audioContext.createGain();
@@ -145,21 +208,69 @@ export class AudioEngine {
     osc.stop(time + 0.04);
   }
 
+  triggerChordTone(frequency, time, peak, decay = 1.35) {
+    const osc = this.audioContext.createOscillator();
+    const filter = this.audioContext.createBiquadFilter();
+    const gain = this.audioContext.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(frequency * 1.004, time);
+    osc.frequency.exponentialRampToValueAtTime(frequency, time + 0.04);
+    filter.type = 'lowpass';
+    filter.frequency.value = Math.min(3200, frequency * 4);
+    gain.gain.setValueAtTime(0.0001, time);
+    gain.gain.linearRampToValueAtTime(peak, time + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, time + decay);
+    osc.connect(filter).connect(gain).connect(this.audioContext.destination);
+    osc.start(time);
+    osc.stop(time + decay + 0.1);
+  }
+
+  playChordAtTime(shape, time, { accent = 1, reverse = false, decay = 1.35, spread = 0.024 } = {}) {
+    const frequencies = getChordPreviewFrequencies(shape);
+    if (!frequencies.length) return;
+    const orderedFrequencies = reverse ? [...frequencies].reverse() : frequencies;
+    const peak = Math.min(0.16, (0.34 / orderedFrequencies.length) * accent);
+    orderedFrequencies.forEach((frequency, index) => {
+      this.triggerChordTone(frequency, time + index * spread, peak, decay);
+    });
+  }
+
+  async playChord(shape) {
+    await this.ensureContext();
+    this.playChordAtTime(shape, this.audioContext.currentTime + 0.02, { accent: 1, decay: 1.35, spread: 0.024 });
+  }
+
   stepDuration() {
     return 60 / this.tempo / this.groove.subdivisionsPerBeat;
   }
 
-  scheduleStep(time, stepIndex) {
+  scheduleStep(time, stepIndex, barIndex) {
     const beatIndex = Math.floor(stepIndex / this.groove.subdivisionsPerBeat);
     const isBeat = stepIndex % this.groove.subdivisionsPerBeat === 0;
 
-    if (this.groove.pattern.kick.includes(stepIndex)) this.triggerKick(time);
-    if (this.groove.pattern.snare.includes(stepIndex)) this.triggerSnare(time);
-    if (this.groove.pattern.hat.includes(stepIndex)) this.triggerHat(time);
+    if (this.playDrums && this.groove.pattern.kick.includes(stepIndex)) this.triggerKick(time);
+    if (this.playDrums && this.groove.pattern.snare.includes(stepIndex)) this.triggerSnare(time);
+    if (this.playDrums && this.groove.pattern.hat.includes(stepIndex)) this.triggerHat(time);
+    if (this.playDrums && this.groove.pattern.shaker?.includes(stepIndex)) this.triggerShaker(time);
+    const strum = this.groove.pattern.chordStrums?.find((entry) => entry.step === stepIndex);
+    if (this.playChords && strum && this.chordSequence.length) {
+      const shape = this.chordSequence[barIndex % this.chordSequence.length];
+      if (shape) {
+        this.playChordAtTime(shape, time, {
+          accent: strum.accent,
+          reverse: strum.reverse,
+          decay: 0.52,
+          spread: 0.016
+        });
+      }
+    }
     if (isBeat) {
-      this.triggerClick(time, beatIndex === 0);
+      if (this.playDrums) this.triggerClick(time, beatIndex === 0);
       const delay = Math.max(0, (time - this.audioContext.currentTime) * 1000);
-      window.setTimeout(() => this.onBeat(beatIndex), delay);
+      const chordIndex = this.playChords && this.chordSequence.length
+        ? barIndex % this.chordSequence.length
+        : -1;
+      window.setTimeout(() => this.onPulse({ beatIndex, chordIndex }), delay);
     }
   }
 
@@ -168,9 +279,10 @@ export class AudioEngine {
     const stepsPerBar = this.groove.beatsPerBar * this.groove.subdivisionsPerBeat;
 
     while (this.nextStepTime < this.audioContext.currentTime + lookAhead) {
-      this.scheduleStep(this.nextStepTime, this.currentStep);
+      this.scheduleStep(this.nextStepTime, this.currentStep, this.currentBar);
       this.nextStepTime += this.stepDuration();
       this.currentStep = (this.currentStep + 1) % stepsPerBar;
+      if (this.currentStep === 0) this.currentBar += 1;
     }
   };
 
@@ -179,6 +291,7 @@ export class AudioEngine {
     if (this.isPlaying) return;
     this.isPlaying = true;
     this.currentStep = 0;
+    this.currentBar = 0;
     this.nextStepTime = this.audioContext.currentTime + 0.05;
     this.scheduler();
     this.schedulerId = window.setInterval(this.scheduler, 25);
@@ -190,7 +303,7 @@ export class AudioEngine {
       window.clearInterval(this.schedulerId);
       this.schedulerId = null;
     }
-    this.onBeat(-1);
+    this.onPulse({ beatIndex: -1, chordIndex: -1 });
   }
 
   async toggle() {
@@ -198,6 +311,7 @@ export class AudioEngine {
       this.stop();
       return false;
     }
+    if (!this.playDrums && !this.playChords) return false;
     await this.start();
     return true;
   }

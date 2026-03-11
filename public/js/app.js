@@ -9,25 +9,29 @@ const state = {
   keyRoot: 0,
   modePreference: 'auto',
   enabledCategories: new Set(['open', 'barre', 'seventh']),
-  shapeMode: 'canonical',
   leftHanded: false,
   tempo: 92,
   meter: '4/4',
   groove: 'folk-pop',
+  playDrums: true,
+  playChords: false,
+  activeChordIndex: -1,
   progression: null,
   shapeOverrides: {}
 };
 
 const elements = {
   currentKeyLabel: document.getElementById('current-key-label'),
-  shapeModeLabel: document.getElementById('shape-mode-label'),
+  beatCounterLabel: document.getElementById('beat-counter-label'),
   keyLockToggle: document.getElementById('key-lock-toggle'),
   keyRootSelect: document.getElementById('key-root-select'),
   leftHandedToggle: document.getElementById('left-handed-toggle'),
   generateButton: document.getElementById('generate-button'),
   warning: document.getElementById('generator-warning'),
+  progressionKeyDisplay: document.getElementById('progression-key-display'),
   progressionGrid: document.getElementById('progression-grid'),
-  progressionMeta: document.getElementById('progression-meta'),
+  playDrumsToggle: document.getElementById('play-drums-toggle'),
+  playChordsToggle: document.getElementById('play-chords-toggle'),
   transportButton: document.getElementById('transport-button'),
   tempoSlider: document.getElementById('tempo-slider'),
   tempoNumber: document.getElementById('tempo-number'),
@@ -38,7 +42,29 @@ const elements = {
 };
 
 let chordLibrary;
-const audioEngine = new AudioEngine((beatIndex) => renderBeatPulse(beatIndex));
+const audioEngine = new AudioEngine(({ beatIndex, chordIndex }) => {
+  renderBeatPulse(beatIndex);
+  setActiveChord(chordIndex);
+});
+
+function syncTransportMode() {
+  audioEngine.setTransportMode({ drums: state.playDrums, chords: state.playChords });
+  elements.playDrumsToggle.checked = state.playDrums;
+  elements.playChordsToggle.checked = state.playChords;
+  elements.transportButton.disabled = !state.playDrums && !state.playChords;
+  if (!state.playChords) setActiveChord(-1);
+}
+
+function getSelectedShapes() {
+  if (!state.progression?.chords?.length || !chordLibrary) return null;
+  return selectShapeSequence(
+    state.progression.chords,
+    chordLibrary,
+    state.enabledCategories,
+    'best-fit',
+    state.shapeOverrides
+  );
+}
 
 function formatKeyLabel(root, mode) {
   if (!mode) return 'Random';
@@ -74,16 +100,24 @@ function renderGrooveOptions() {
 
 function renderBeatPulse(activeBeat) {
   const groove = GROOVES.find((item) => item.id === state.groove);
+  elements.beatCounterLabel.textContent = activeBeat >= 0 ? `Beat ${activeBeat + 1} of ${groove.beatsPerBar}` : '';
   elements.beatIndicator.innerHTML = Array.from({ length: groove.beatsPerBar }, (_, index) => (
     `<div class="beat-dot${index === activeBeat ? ' active' : ''}" aria-label="Beat ${index + 1}"></div>`
   )).join('');
+}
+
+function setActiveChord(index) {
+  state.activeChordIndex = Number.isInteger(index) ? index : -1;
+  elements.progressionGrid.querySelectorAll('[data-chord-card]').forEach((card) => {
+    const cardIndex = Number(card.getAttribute('data-chord-card'));
+    card.classList.toggle('playing', cardIndex === state.activeChordIndex && state.playChords);
+  });
 }
 
 function updateStatusLine() {
   elements.currentKeyLabel.textContent = state.progression
     ? formatKeyLabel(state.progression.keyRoot, state.progression.mode)
     : 'Unavailable';
-  elements.shapeModeLabel.textContent = state.shapeMode === 'best-fit' ? 'Best Fit' : 'Canonical';
 }
 
 function updateWarning(message) {
@@ -96,13 +130,27 @@ function updateTransportButton(isPlaying) {
 }
 
 function renderEmptyProgression(message) {
-  elements.progressionMeta.textContent = message;
+  setActiveChord(-1);
+  audioEngine.setChordSequence([]);
+  elements.progressionKeyDisplay.innerHTML = `
+    <span class="progression-key-label">Key</span>
+    <strong class="progression-key-title">Unavailable</strong>
+    <span class="progression-loop-name">Progression: ${message}</span>
+  `;
   elements.progressionGrid.innerHTML = `
     <article class="chord-card">
-      <h3>—</h3>
-      <div class="card-meta"><span class="theory-chip">No playable loop</span></div>
+      <div class="card-header">
+        <div class="card-title-row">
+          <h3>—</h3>
+          <span class="voicing-chip">No voicing</span>
+        </div>
+        <div class="card-meta"><span class="theory-chip">No playable loop</span></div>
+      </div>
       <div class="diagram-wrap"></div>
-      <button class="swap-shape" type="button" disabled>Adjust filters</button>
+      <div class="card-actions">
+        <button class="preview-chord" type="button" disabled>Play</button>
+        <button class="swap-shape" type="button" disabled>Adjust filters</button>
+      </div>
     </article>
   `;
 }
@@ -114,13 +162,7 @@ function renderProgression() {
     return;
   }
 
-  const selectedShapes = selectShapeSequence(
-    state.progression.chords,
-    chordLibrary,
-    state.enabledCategories,
-    state.shapeMode,
-    state.shapeOverrides
-  );
+  const selectedShapes = getSelectedShapes();
 
   if (!selectedShapes) {
     updateWarning('The selected shape filters cannot voice the current loop. Generate a new one.');
@@ -129,34 +171,45 @@ function renderProgression() {
     return;
   }
 
-  elements.progressionMeta.textContent = `${formatKeyLabel(state.progression.keyRoot, state.progression.mode)} • ${state.progression.templateId.replaceAll('-', ' ')}`;
+  audioEngine.setChordSequence(selectedShapes.selected);
+  elements.progressionKeyDisplay.innerHTML = `
+    <span class="progression-key-label">Key</span>
+    <strong class="progression-key-title">${formatKeyLabel(state.progression.keyRoot, state.progression.mode)}</strong>
+    <span class="progression-loop-name">Progression: ${state.progression.templateId.replaceAll('-', ' ')}</span>
+  `;
   elements.progressionGrid.innerHTML = state.progression.chords.map((chord, index) => {
     const shape = selectedShapes.selected[index];
     const totalCandidates = selectedShapes.candidatesByIndex[index].length;
     return `
-      <article class="chord-card" data-chord-card="${index}">
-        <div class="card-topline">
-          <div>
+      <article class="chord-card${index === state.activeChordIndex && state.playChords ? ' playing' : ''}" data-chord-card="${index}">
+        <div class="card-header">
+          <div class="card-title-row">
             <h3>${chord.label}</h3>
+            <span class="voicing-chip">${shape.label}</span>
           </div>
-          <span class="voicing-chip">${shape.label}</span>
-        </div>
-        <div class="card-meta">
-          <span class="theory-chip">${chord.theoryChip}</span>
+          <div class="card-topline">
+            <span class="theory-chip">${chord.theoryChip}</span>
+          </div>
         </div>
         <div class="diagram-wrap">${renderChordDiagram(shape, { leftHanded: state.leftHanded })}</div>
-        <button
-          class="swap-shape"
-          type="button"
-          data-cycle-shape="${index}"
-          ${totalCandidates < 2 ? 'disabled' : ''}
-        >
-          ${totalCandidates < 2 ? 'Only voicing' : `Swap shape (${selectedShapes.selectedIndices[index] + 1}/${totalCandidates})`}
-        </button>
+        <div class="card-actions">
+          <button class="preview-chord" type="button" data-preview-chord="${index}" aria-label="Play ${chord.label}">
+            Play
+          </button>
+          <button
+            class="swap-shape"
+            type="button"
+            data-cycle-shape="${index}"
+            ${totalCandidates < 2 ? 'disabled' : ''}
+          >
+            ${totalCandidates < 2 ? 'Only voicing' : `Swap shape (${selectedShapes.selectedIndices[index] + 1}/${totalCandidates})`}
+          </button>
+        </div>
       </article>
     `;
   }).join('');
 
+  setActiveChord(state.activeChordIndex);
   updateStatusLine();
 }
 
@@ -190,6 +243,7 @@ function readEnabledCategories() {
 }
 
 function attachEventListeners() {
+  syncTransportMode();
   elements.generateButton.addEventListener('click', regenerateProgression);
   elements.keyLockToggle.addEventListener('change', () => {
     state.keyLocked = elements.keyLockToggle.checked;
@@ -216,34 +270,49 @@ function attachEventListeners() {
     });
   });
 
-  document.querySelectorAll('input[name="shape-mode"]').forEach((node) => {
-    node.addEventListener('change', () => {
-      state.shapeMode = document.querySelector('input[name="shape-mode"]:checked').value;
-      renderProgression();
-    });
-  });
-
   elements.leftHandedToggle.addEventListener('change', () => {
     state.leftHanded = elements.leftHandedToggle.checked;
     renderProgression();
   });
 
   elements.progressionGrid.addEventListener('click', (event) => {
+    const previewButton = event.target.closest('[data-preview-chord]');
+    if (previewButton && state.progression) {
+      const index = Number(previewButton.getAttribute('data-preview-chord'));
+      const selection = getSelectedShapes();
+      if (selection?.selected[index]) {
+        audioEngine.playChord(selection.selected[index]);
+      }
+      return;
+    }
+
     const button = event.target.closest('[data-cycle-shape]');
     if (!button || !state.progression) return;
     const index = Number(button.getAttribute('data-cycle-shape'));
-    const selection = selectShapeSequence(
-      state.progression.chords,
-      chordLibrary,
-      state.enabledCategories,
-      state.shapeMode,
-      state.shapeOverrides
-    );
+    const selection = getSelectedShapes();
     if (!selection) return;
     const total = selection.candidatesByIndex[index].length;
     const currentIndex = selection.selectedIndices[index];
     state.shapeOverrides[index] = (currentIndex + 1) % total;
     renderProgression();
+  });
+
+  elements.playDrumsToggle.addEventListener('change', () => {
+    state.playDrums = elements.playDrumsToggle.checked;
+    syncTransportMode();
+    if (!state.playDrums && !state.playChords && audioEngine.isPlaying) {
+      audioEngine.stop();
+      updateTransportButton(false);
+    }
+  });
+
+  elements.playChordsToggle.addEventListener('change', () => {
+    state.playChords = elements.playChordsToggle.checked;
+    syncTransportMode();
+    if (!state.playDrums && !state.playChords && audioEngine.isPlaying) {
+      audioEngine.stop();
+      updateTransportButton(false);
+    }
   });
 
   elements.tempoSlider.addEventListener('input', () => syncTempo(elements.tempoSlider.value));
@@ -269,6 +338,7 @@ async function init() {
   renderKeyOptions();
   renderGrooveOptions();
   syncTempo(state.tempo);
+  syncTransportMode();
   attachEventListeners();
   chordLibrary = await loadChordLibrary();
   regenerateProgression();

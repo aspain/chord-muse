@@ -1,16 +1,34 @@
 function xForString(stringNumber, leftHanded) {
   const index = stringNumber - 1;
-  return leftHanded ? 110 - index * 20 : 10 + index * 20;
+  return leftHanded ? 22 + index * 20 : 122 - index * 20;
 }
 
 function yForFret(fretIndex) {
-  return 38 + fretIndex * 24;
+  return 28 + fretIndex * 24;
+}
+
+function getDisplayBaseFret(shape) {
+  if (shape.baseFret > 1) {
+    return shape.baseFret;
+  }
+
+  const playedFrets = [
+    ...shape.frets.filter((fret) => fret > 0),
+    ...(shape.barres || []).map((barre) => barre.fret)
+  ];
+
+  if (!playedFrets.length || shape.frets.includes(0)) {
+    return 1;
+  }
+
+  return Math.max(1, Math.min(...playedFrets));
 }
 
 export function buildDiagramModel(shape, { leftHanded = false } = {}) {
   const markers = [];
   const stringStates = [];
   const labels = [];
+  const displayBaseFret = getDisplayBaseFret(shape);
 
   for (let stringNumber = 1; stringNumber <= 6; stringNumber += 1) {
     const shapeIndex = 6 - stringNumber;
@@ -26,7 +44,7 @@ export function buildDiagramModel(shape, { leftHanded = false } = {}) {
       continue;
     }
 
-    const displayedFret = shape.baseFret > 1 ? fret - shape.baseFret + 1 : fret;
+    const displayedFret = displayBaseFret > 1 ? fret - displayBaseFret + 1 : fret;
     markers.push({
       x,
       y: yForFret(displayedFret - 0.5),
@@ -37,7 +55,7 @@ export function buildDiagramModel(shape, { leftHanded = false } = {}) {
     if (finger > 0) {
       labels.push({
         x,
-        y: 163,
+        y: yForFret(displayedFret - 0.5) + 0.5,
         text: String(finger),
         stringNumber
       });
@@ -45,7 +63,7 @@ export function buildDiagramModel(shape, { leftHanded = false } = {}) {
   }
 
   const barres = (shape.barres || []).map((barre) => {
-    const displayedFret = shape.baseFret > 1 ? barre.fret - shape.baseFret + 1 : barre.fret;
+    const displayedFret = displayBaseFret > 1 ? barre.fret - displayBaseFret + 1 : barre.fret;
     return {
       x1: xForString(barre.fromString, leftHanded),
       x2: xForString(barre.toString, leftHanded),
@@ -55,7 +73,8 @@ export function buildDiagramModel(shape, { leftHanded = false } = {}) {
   });
 
   return {
-    baseFret: shape.baseFret,
+    baseFret: displayBaseFret,
+    visibleFrets: 5,
     markers,
     labels,
     stringStates,
@@ -65,24 +84,26 @@ export function buildDiagramModel(shape, { leftHanded = false } = {}) {
 
 export function renderChordDiagram(shape, options = {}) {
   const model = buildDiagramModel(shape, options);
+  const bottomY = 28 + model.visibleFrets * 24;
+  const viewBoxHeight = bottomY + 18;
   const baseFretText = model.baseFret > 1
-    ? `<text x="8" y="78" class="diagram-basefret">${model.baseFret}fr</text>`
+    ? `<text x="0" y="82" class="diagram-basefret">${model.baseFret}fr</text>`
     : '';
 
   const strings = Array.from({ length: 6 }, (_, index) => {
     const stringNumber = index + 1;
     const x = xForString(stringNumber, options.leftHanded);
-    return `<line x1="${x}" y1="26" x2="${x}" y2="134" class="diagram-string" />`;
+    return `<line x1="${x}" y1="28" x2="${x}" y2="${bottomY}" class="diagram-string" />`;
   }).join('');
 
-  const frets = Array.from({ length: 6 }, (_, index) => {
-    const y = 26 + index * 24;
+  const frets = Array.from({ length: model.visibleFrets + 1 }, (_, index) => {
+    const y = 28 + index * 24;
     const className = index === 0 && model.baseFret === 1 ? 'diagram-nut' : 'diagram-fret';
-    return `<line x1="10" y1="${y}" x2="110" y2="${y}" class="${className}" />`;
+    return `<line x1="22" y1="${y}" x2="122" y2="${y}" class="${className}" />`;
   }).join('');
 
   const stringStates = model.stringStates.map((state) => (
-    `<text x="${state.x}" y="18" class="diagram-state">${state.symbol}</text>`
+    `<text x="${state.x}" y="20" class="diagram-state">${state.symbol}</text>`
   )).join('');
 
   const barres = model.barres.map((barre) => (
@@ -98,7 +119,7 @@ export function renderChordDiagram(shape, options = {}) {
   )).join('');
 
   return `
-    <svg viewBox="0 0 120 172" class="chord-diagram" aria-hidden="true" focusable="false">
+    <svg viewBox="0 0 132 ${viewBoxHeight}" class="chord-diagram" aria-hidden="true" focusable="false">
       ${baseFretText}
       ${strings}
       ${frets}

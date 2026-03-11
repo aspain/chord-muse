@@ -19,6 +19,24 @@ test('left-handed diagrams mirror string placement', async () => {
 
   assert.ok(rightHanded.markers.length > 0);
   assert.ok(leftHanded.markers.length > 0);
-  assert.equal(rightHanded.markers[0].x, 110 - leftHanded.markers[0].x + 10);
+  assert.equal(rightHanded.markers[0].x, 144 - leftHanded.markers[0].x);
   assert.notEqual(rightHanded.stringStates[0]?.x, leftHanded.stringStates[0]?.x);
+  assert.ok(rightHanded.markers[0].x > leftHanded.markers[0].x);
+  assert.equal(rightHanded.labels[0].x, rightHanded.markers[0].x);
+  assert.ok(Math.abs(rightHanded.labels[0].y - rightHanded.markers[0].y) < 2);
+});
+
+test('high-position shapes render inside a fixed five-fret viewport', () => {
+  const shape = {
+    frets: [-1, 7, 9, 9, -1, -1],
+    fingers: [0, 1, 3, 4, 0, 0],
+    barres: [],
+    baseFret: 1
+  };
+
+  const model = buildDiagramModel(shape);
+
+  assert.equal(model.baseFret, 7);
+  assert.equal(model.visibleFrets, 5);
+  assert.deepEqual(model.markers.map((marker) => marker.y), [88, 88, 40]);
 });
