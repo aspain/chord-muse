@@ -1,5 +1,21 @@
 export const FRIENDLY_NOTES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
 
+const NOTE_LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+const NATURAL_PITCH_CLASSES = {
+  C: 0,
+  D: 2,
+  E: 4,
+  F: 5,
+  G: 7,
+  A: 9,
+  B: 11
+};
+
+const KEY_TONIC_SPELLINGS = {
+  major: ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'],
+  minor: ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'G#', 'A', 'Bb', 'B']
+};
+
 const NOTE_ALIASES = new Map([
   ['C', 0],
   ['B#', 0],
@@ -62,6 +78,8 @@ const SCALE_INTERVALS = {
   minor: [0, 2, 3, 5, 7, 8, 10]
 };
 
+const SCALE_NOTE_CACHE = new Map();
+
 export function normalizePitchClass(value) {
   if (typeof value === 'number') return ((value % 12) + 12) % 12;
   const trimmed = String(value).trim();
@@ -73,16 +91,73 @@ export function pitchClassToNote(pitchClass) {
   return FRIENDLY_NOTES[normalizePitchClass(pitchClass)];
 }
 
+function parseNoteSpelling(noteName) {
+  const match = /^([A-G])([#b]*)$/.exec(noteName);
+  if (!match) throw new Error(`Unsupported note spelling: ${noteName}`);
+
+  return {
+    letter: match[1]
+  };
+}
+
+function accidentalSuffix(accidentalOffset) {
+  if (accidentalOffset > 0) return '#'.repeat(accidentalOffset);
+  if (accidentalOffset < 0) return 'b'.repeat(Math.abs(accidentalOffset));
+  return '';
+}
+
+function relativeAccidentalOffset(naturalPitchClass, targetPitchClass) {
+  let offset = normalizePitchClass(targetPitchClass - naturalPitchClass);
+  if (offset > 6) offset -= 12;
+  return offset;
+}
+
+function buildScaleNoteNames(mode, rootPitchClass) {
+  const cacheKey = `${mode}:${normalizePitchClass(rootPitchClass)}`;
+  if (SCALE_NOTE_CACHE.has(cacheKey)) return SCALE_NOTE_CACHE.get(cacheKey);
+
+  const tonic = getKeyTonicName(mode, rootPitchClass);
+  const { letter: tonicLetter } = parseNoteSpelling(tonic);
+  const tonicLetterIndex = NOTE_LETTERS.indexOf(tonicLetter);
+
+  const scaleNotes = SCALE_INTERVALS[mode].map((interval, degreeIndex) => {
+    const letter = NOTE_LETTERS[(tonicLetterIndex + degreeIndex) % NOTE_LETTERS.length];
+    const targetPitchClass = transposePitchClass(rootPitchClass, interval);
+    const naturalPitchClass = NATURAL_PITCH_CLASSES[letter];
+    const accidentalOffset = relativeAccidentalOffset(naturalPitchClass, targetPitchClass);
+    return `${letter}${accidentalSuffix(accidentalOffset)}`;
+  });
+
+  SCALE_NOTE_CACHE.set(cacheKey, scaleNotes);
+  return scaleNotes;
+}
+
+export function getKeyTonicName(mode, rootPitchClass) {
+  return KEY_TONIC_SPELLINGS[mode][normalizePitchClass(rootPitchClass)];
+}
+
+export function getScaleNoteName(mode, rootPitchClass, degree) {
+  const scaleNotes = buildScaleNoteNames(mode, rootPitchClass);
+  const noteName = scaleNotes[degree - 1];
+  if (!noteName) throw new Error(`Unknown degree ${degree} for mode ${mode}`);
+  return noteName;
+}
+
 export function transposePitchClass(root, semitones) {
   return normalizePitchClass(normalizePitchClass(root) + semitones);
 }
 
-export function buildChordId(pitchClass, quality) {
-  return `${pitchClassToNote(pitchClass)}:${quality}`;
+export function buildChordId(noteOrPitchClass, quality) {
+  const noteName = typeof noteOrPitchClass === 'string'
+    ? noteOrPitchClass
+    : pitchClassToNote(noteOrPitchClass);
+  return `${noteName}:${quality}`;
 }
 
-export function formatChordLabel(pitchClass, quality) {
-  const note = pitchClassToNote(pitchClass);
+export function formatChordLabel(noteOrPitchClass, quality) {
+  const note = typeof noteOrPitchClass === 'string'
+    ? noteOrPitchClass
+    : pitchClassToNote(noteOrPitchClass);
   const suffix = QUALITY_LABELS[quality] ?? quality;
   return `${note}${suffix}`;
 }
@@ -96,12 +171,14 @@ export function getDegreeInfo(mode, degree) {
 export function buildChordDefinition(rootPitchClass, mode, degree, qualityOverride) {
   const degreeInfo = getDegreeInfo(mode, degree);
   const pitchClass = transposePitchClass(rootPitchClass, SCALE_INTERVALS[mode][degree - 1]);
+  const noteName = getScaleNoteName(mode, rootPitchClass, degree);
   const quality = qualityOverride || degreeInfo.quality;
   return {
-    id: buildChordId(pitchClass, quality),
+    id: buildChordId(noteName, quality),
     pitchClass,
+    noteName,
     quality,
-    label: formatChordLabel(pitchClass, quality),
+    label: formatChordLabel(noteName, quality),
     degree,
     numeral: degreeInfo.numeral,
     functionLabel: degreeInfo.functionLabel,

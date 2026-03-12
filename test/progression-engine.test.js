@@ -73,6 +73,33 @@ test('generateProgression can build a C major open-chord loop when the key is lo
   }
 });
 
+test('generateProgression spells diatonic chords according to the locked key signature', async () => {
+  const library = await loadLibrary();
+  const progression = generateProgression(
+    {
+      keyLocked: true,
+      keyRoot: 4,
+      modePreference: 'major',
+      enabledShapeTypes: new Set(['open', 'barre']),
+      enabledFlavorOptions: new Set()
+    },
+    library,
+    () => 0
+  );
+
+  assert.equal(progression.warning, '');
+  assert.equal(progression.keyRoot, 4);
+  assert.equal(progression.mode, 'major');
+  assert.deepEqual(
+    progression.chords.map((chord) => chord.label),
+    ['E', 'B', 'C#m', 'A']
+  );
+  assert.deepEqual(
+    progression.chords.map((chord) => chord.id),
+    ['E:maj', 'B:maj', 'C#:min', 'A:maj']
+  );
+});
+
 test('generateProgression offers multiple open-chord major loops when the key is locked to C', async () => {
   const library = await loadLibrary();
   const templateIds = new Set(

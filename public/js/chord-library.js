@@ -377,7 +377,7 @@ export function getCandidateShapesForChord(chord, library, enabledShapeTypes) {
     const shape = buildShape(chord.pitchClass, chord.quality);
     if (!shape) continue;
     if (!matchesEnabledShapeTypes(shape.categories, enabled)) continue;
-    candidates.push(shape);
+    candidates.push(cloneShape(shape, chord.id, chord.label));
   }
 
   return candidates.sort(compareShapes);

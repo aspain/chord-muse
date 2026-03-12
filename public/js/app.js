@@ -1,7 +1,7 @@
 import { AudioEngine, GROOVES } from './audio-engine.js';
 import { loadChordLibrary, selectShapeSequence } from './chord-library.js';
 import { renderChordDiagram } from './chord-diagram.js';
-import { FRIENDLY_NOTES, pitchClassToNote } from './music-theory.js';
+import { getKeyTonicName, listPitchClasses } from './music-theory.js';
 import {
   generateProgression,
   rebuildProgression,
@@ -74,11 +74,21 @@ function getSelectedShapes() {
 
 function formatKeyLabel(root, mode) {
   if (!mode) return 'Random';
-  return `${pitchClassToNote(root)} ${mode === 'major' ? 'major' : 'minor'}`;
+  return `${getKeyTonicName(mode, root)} ${mode === 'major' ? 'major' : 'minor'}`;
+}
+
+function formatKeyRootOption(pitchClass) {
+  if (state.modePreference === 'major' || state.modePreference === 'minor') {
+    return getKeyTonicName(state.modePreference, pitchClass);
+  }
+
+  const majorName = getKeyTonicName('major', pitchClass);
+  const minorName = getKeyTonicName('minor', pitchClass);
+  return majorName === minorName ? majorName : `${majorName}/${minorName}`;
 }
 
 function renderKeyOptions() {
-  const feasibleRoots = chordLibrary ? getFeasibleKeyRoots(state, chordLibrary) : FRIENDLY_NOTES.map((_, index) => index);
+  const feasibleRoots = chordLibrary ? getFeasibleKeyRoots(state, chordLibrary) : listPitchClasses();
   if (feasibleRoots.length) {
     if (!feasibleRoots.includes(state.keyRoot)) {
       state.keyRoot = feasibleRoots[0];
@@ -88,7 +98,7 @@ function renderKeyOptions() {
   }
 
   elements.keyRootSelect.innerHTML = feasibleRoots
-    .map((index) => `<option value="${index}">${FRIENDLY_NOTES[index]}</option>`)
+    .map((index) => `<option value="${index}">${formatKeyRootOption(index)}</option>`)
     .join('');
   elements.keyRootSelect.value = String(state.keyRoot);
   elements.keyRootSelect.disabled = !state.keyLocked || feasibleRoots.length === 0;
