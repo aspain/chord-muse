@@ -4,13 +4,11 @@
 
 It gives you a playable 4-chord loop, shows you chord diagrams, and lets you practice with a built-in groove.
 
-## Try it here
-
-[adamspain.com/chord-muse](https://adamspain.com/chord-muse)
+## [Try it here](https://adamspain.com/chord-muse)
 
 ![Chord Muse preview](public/chord-muse-preview.png)
 
-## What you can do
+## Features
 
 - Generate a new chord progression with one button
 - Keep the key fixed or let the app choose one for you
