@@ -240,6 +240,7 @@ export class AudioEngine {
     this.onPulse = onPulse;
     this.audioContext = null;
     this.noiseBuffer = null;
+    this.audioSessionConfigured = false;
     this.tempo = 92;
     this.groove = GROOVES[1];
     this.playDrums = true;
@@ -270,7 +271,24 @@ export class AudioEngine {
     this.chordSequence = Array.isArray(sequence) ? sequence : [];
   }
 
+  configureAudioSession() {
+    if (this.audioSessionConfigured) return;
+    const session = navigator.audioSession;
+    if (!session || session.type === 'playback') {
+      this.audioSessionConfigured = true;
+      return;
+    }
+
+    try {
+      session.type = 'playback';
+      this.audioSessionConfigured = session.type === 'playback';
+    } catch {
+      this.audioSessionConfigured = false;
+    }
+  }
+
   async ensureContext() {
+    this.configureAudioSession();
     if (!this.audioContext) {
       const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
       this.audioContext = new AudioContextCtor();
