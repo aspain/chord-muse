@@ -210,10 +210,10 @@ function renderProgression() {
         <div class="card-header">
           <div class="card-title-row">
             <h3>${chord.label}</h3>
-            <span class="voicing-chip">${shape.label}</span>
+            <span class="voicing-chip card-chip-inline">${shape.label}</span>
           </div>
           <div class="card-topline">
-            <span class="theory-chip">${chord.theoryChip}</span>
+            <span class="theory-chip card-chip-inline">${chord.theoryChip}</span>
           </div>
         </div>
         <div class="diagram-wrap">${renderChordDiagram(shape, { leftHanded: state.leftHanded })}</div>

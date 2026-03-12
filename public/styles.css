@@ -173,6 +173,7 @@ select:focus-visible {
   background: rgba(255, 255, 255, 0.68);
   font-weight: 800;
   color: var(--ink);
+  white-space: nowrap;
 }
 
 .transport-toggle input {
@@ -203,10 +204,7 @@ select:focus-visible {
 .rhythm-actions {
   justify-content: end;
   gap: 10px;
-}
-
-.rhythm-heading-hidden {
-  opacity: 0;
+  flex-wrap: nowrap;
 }
 
 .status-strip {
@@ -249,12 +247,12 @@ select:focus-visible {
 
 .control-block-header {
   display: grid;
-  gap: 5px;
+  gap: 3px;
   padding: 1px var(--control-rail) 0;
 }
 
 .aligned-control-header {
-  grid-template-rows: auto 16px;
+  grid-template-rows: auto;
 }
 
 .control-caption {
@@ -334,6 +332,7 @@ input[type='number'] {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  min-width: 0;
   min-height: var(--control-height);
   padding: 8px 10px;
   border-radius: 14px;
@@ -374,6 +373,7 @@ input[type='radio'] {
   align-items: center;
   justify-content: center;
   gap: 6px;
+  min-width: 0;
   min-height: var(--control-height);
   padding: 8px 10px;
   border-radius: 14px;
@@ -411,12 +411,22 @@ input[type='radio'] {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
   min-height: var(--control-height);
   padding: 8px 10px;
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.52);
   border: 1px solid rgba(96, 61, 36, 0.11);
   font-weight: 700;
+}
+
+.toggle-row span,
+.segmented label span,
+.checkbox-field label span {
+  min-width: 0;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
 }
 
 .checkbox-field legend {
@@ -429,6 +439,12 @@ input[type='radio'] {
   color: var(--accent-deep);
   font-size: 12px;
   font-weight: 700;
+}
+
+.inline-warning:empty {
+  display: none;
+  min-height: 0;
+  margin: 0;
 }
 
 .progression-body {
@@ -743,6 +759,140 @@ input[type='radio'] {
   background: #bca695;
 }
 
+@media (min-width: 1041px) {
+  .page-shell {
+    max-width: 1800px;
+  }
+
+  .progression-body {
+    position: static;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(176px, 208px) minmax(0, 1fr);
+    align-items: start;
+    gap: 18px;
+  }
+
+  .progression-key {
+    position: static;
+    width: auto;
+    gap: 5px;
+    padding: 6px 0 0 4px;
+  }
+
+  .progression-loop-name {
+    white-space: normal;
+    line-height: 1.15;
+  }
+
+  .progression-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    width: 100%;
+    margin: 0;
+  }
+
+  .progression-grid.progression-grid-empty {
+    width: 100%;
+  }
+
+  .chord-card:not(.empty-state-card) {
+    width: 100%;
+    max-width: 364px;
+    justify-self: center;
+    --card-stage-width: min(calc(100% - 28px), 324px);
+    padding: 12px 14px 14px;
+  }
+
+  .chord-card:not(.empty-state-card) .card-header {
+    display: grid;
+    grid-template-columns: max-content minmax(10px, 1fr) auto minmax(10px, 1fr) max-content;
+    align-items: center;
+    width: var(--card-stage-width);
+    margin-inline: auto;
+    min-height: 0;
+    gap: 4px 8px;
+    padding-bottom: 6px;
+  }
+
+  .chord-card:not(.empty-state-card) .card-title-row {
+    display: contents;
+  }
+
+  .chord-card:not(.empty-state-card) .card-title-row h3 {
+    grid-row: 1;
+    grid-column: 3;
+    text-align: center;
+  }
+
+  .chord-card:not(.empty-state-card) .card-topline {
+    grid-row: 1;
+    grid-column: 1;
+    justify-content: flex-start;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .chord-card:not(.empty-state-card) .card-title-row .voicing-chip {
+    grid-row: 1;
+    grid-column: 5;
+    justify-self: end;
+    margin-left: 0;
+  }
+
+  .chord-card:not(.empty-state-card) .theory-chip,
+  .chord-card:not(.empty-state-card) .voicing-chip {
+    font-size: 8px;
+    padding: 4px 8px;
+    white-space: nowrap;
+  }
+
+  .diagram-wrap {
+    width: var(--card-stage-width);
+    margin-inline: auto;
+    height: 266px;
+    min-height: 266px;
+  }
+
+  .chord-diagram {
+    width: min(100%, 238px);
+  }
+
+  .card-actions {
+    width: var(--card-stage-width);
+    margin-inline: auto;
+    padding-inline: 0;
+  }
+}
+
+@media (min-width: 1440px) {
+  .page-shell {
+    max-width: 1920px;
+  }
+
+  .progression-body {
+    grid-template-columns: minmax(188px, 224px) minmax(0, 1fr);
+  }
+
+  .progression-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .chord-card:not(.empty-state-card) {
+    max-width: 344px;
+    --card-stage-width: min(calc(100% - 30px), 304px);
+  }
+
+  .diagram-wrap {
+    height: 278px;
+    min-height: 278px;
+  }
+
+  .chord-diagram {
+    width: min(100%, 248px);
+  }
+}
+
 .tempo-inputs,
 .rhythm-fields {
   display: grid;
@@ -850,10 +1000,14 @@ input[type='range'] {
   .progression-body {
     display: grid;
     grid-template-columns: 1fr;
+    position: static;
+    min-height: 0;
     gap: 10px;
   }
 
   .progression-key {
+    position: static;
+    width: 100%;
     padding: 0 2px 0 8px;
   }
 }
@@ -996,18 +1150,38 @@ input[type='range'] {
     min-height: 10px;
   }
 
+  .progression-body {
+    position: static;
+    min-height: 0;
+    gap: 10px;
+  }
+
   .progression-key {
-    width: 148px;
-    gap: 4px;
-    padding: 0 2px 0 6px;
+    position: static;
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr);
+    align-items: baseline;
+    gap: 6px;
+    padding: 0 4px;
+  }
+
+  .progression-key-label {
+    font-size: 8px;
+    letter-spacing: 0.14em;
   }
 
   .progression-key-title {
-    font-size: 22px;
+    font-size: 20px;
+    line-height: 0.98;
   }
 
   .progression-loop-name {
+    min-width: 0;
     font-size: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .progression-grid {
@@ -1017,28 +1191,71 @@ input[type='range'] {
   }
 
   .chord-card {
-    min-height: 214px;
+    min-height: 0;
     padding: 8px;
     gap: 6px;
     border-radius: 20px;
   }
 
   .card-header {
-    min-height: 50px;
-    gap: 6px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    min-height: 34px;
+    gap: 3px 6px;
+    padding: 0;
+    align-items: center;
+    align-content: start;
   }
 
   .chord-card h3 {
-    font-size: 20px;
+    font-size: 18px;
+  }
+
+  .card-title-row {
+    display: contents;
+  }
+
+  .card-title-row h3 {
+    grid-row: 1;
+    grid-column: 2;
+    align-self: center;
+    text-align: center;
+  }
+
+  .card-topline {
+    grid-row: 1;
+    grid-column: 1;
+    justify-content: flex-start;
+    align-items: center;
+    align-self: center;
+    min-width: 0;
+  }
+
+  .card-title-row .voicing-chip {
+    grid-row: 1;
+    grid-column: 3;
+    align-self: center;
+    justify-self: end;
+    margin-left: 0;
   }
 
   .diagram-wrap {
-    height: 148px;
-    min-height: 148px;
+    height: 136px;
+    min-height: 136px;
   }
 
   .chord-diagram {
-    width: min(100%, 156px);
+    width: min(100%, 128px);
+  }
+
+  .card-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 74px);
+    width: auto;
+    max-width: 100%;
+    justify-content: center;
+    gap: 4px;
+    padding-top: 0;
   }
 
   .theory-chip,
@@ -1047,14 +1264,23 @@ input[type='range'] {
   .swap-shape {
     font-size: 7px;
     padding: 4px 7px;
+    max-width: 100%;
+    justify-content: center;
+    text-align: center;
+    white-space: nowrap;
   }
 
   .preview-chord {
-    min-width: 62px;
+    min-width: 0;
+  }
+
+  .preview-chord,
+  .swap-shape {
+    width: 100%;
   }
 }
 
-@media (max-height: 900px) and (min-width: 1100px) {
+@media (max-height: 900px) and (min-width: 1041px) {
   .control-caption {
     display: none;
   }
@@ -1111,18 +1337,19 @@ input[type='range'] {
   }
 
   .progression-body {
-    position: relative;
-    gap: 12px;
-    min-height: 230px;
+    position: static;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(160px, 188px) minmax(0, 1fr);
+    align-items: start;
+    gap: 16px;
   }
 
   .progression-key {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 168px;
+    position: static;
+    width: auto;
     gap: 5px;
-    padding: 6px 2px 0 8px;
+    padding: 6px 0 0 4px;
   }
 
   .progression-key-title {
@@ -1143,13 +1370,22 @@ input[type='range'] {
   }
 
   .progression-grid {
-    grid-template-columns: repeat(4, minmax(178px, 212px));
-    gap: 18px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    width: 100%;
+    margin: 0;
+  }
+
+  .chord-card:not(.empty-state-card) {
+    width: 100%;
+    max-width: 340px;
+    justify-self: center;
+    --card-stage-width: min(calc(100% - 28px), 300px);
   }
 
   .chord-card {
     min-height: 230px;
-    padding: 8px;
+    padding: 10px 12px 12px;
     gap: 6px;
   }
 
@@ -1159,16 +1395,17 @@ input[type='range'] {
   }
 
   .chord-card h3 {
-    font-size: clamp(18px, 1.35vw, 22px);
+    font-size: clamp(20px, 1.45vw, 24px);
   }
 
   .diagram-wrap {
-    height: 166px;
-    min-height: 166px;
+    width: var(--card-stage-width);
+    height: 198px;
+    min-height: 198px;
   }
 
   .chord-diagram {
-    width: min(100%, 173px);
+    width: min(100%, 208px);
   }
 
   .theory-chip,
@@ -1177,6 +1414,21 @@ input[type='range'] {
   .swap-shape {
     font-size: 8px;
     padding: 5px 8px;
+  }
+}
+
+@media (max-height: 900px) and (min-width: 1440px) {
+  .progression-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .chord-card:not(.empty-state-card) {
+    max-width: 328px;
+    --card-stage-width: min(calc(100% - 30px), 292px);
+  }
+
+  .diagram-wrap {
+    width: var(--card-stage-width);
   }
 }
 
@@ -1283,7 +1535,6 @@ input[type='range'] {
   }
 
   .progression-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
 
@@ -1292,8 +1543,8 @@ input[type='range'] {
   }
 
   .progression-key {
-    width: 126px;
-    padding-left: 4px;
+    gap: 5px;
+    padding: 0 2px;
   }
 
   .progression-key-title {
@@ -1301,15 +1552,14 @@ input[type='range'] {
   }
 
   .chord-card {
-    min-height: 190px;
     padding: 6px;
     gap: 5px;
     border-radius: 18px;
   }
 
   .card-header {
-    min-height: 42px;
-    gap: 5px;
+    gap: 2px 5px;
+    min-height: 34px;
   }
 
   .chord-card h3 {
@@ -1317,12 +1567,20 @@ input[type='range'] {
   }
 
   .diagram-wrap {
+    align-items: flex-start;
     height: 126px;
     min-height: 126px;
+    padding-top: 0;
   }
 
   .chord-diagram {
-    width: min(100%, 136px);
+    width: min(100%, 116px);
+    transform: translateY(-6px);
+  }
+
+  .card-actions {
+    grid-template-columns: repeat(2, 68px);
+    gap: 3px;
   }
 
   .action-cluster {
@@ -1418,28 +1676,197 @@ input[type='range'] {
     min-height: 8px;
   }
 
+  .progression-body {
+    position: static;
+    min-height: 0;
+    gap: 8px;
+  }
+
+  .progression-key {
+    position: static;
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr);
+    align-items: baseline;
+    gap: 4px;
+    padding: 0 2px;
+  }
+
+  .progression-key-label {
+    font-size: 7px;
+    letter-spacing: 0.12em;
+  }
+
+  .progression-key-title {
+    font-size: 16px;
+    line-height: 0.98;
+  }
+
+  .progression-loop-name {
+    min-width: 0;
+    font-size: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+  }
+
   .progression-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 7px;
+    width: 100%;
+  }
+
+  .progression-grid.progression-grid-empty {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .chord-card {
+    min-height: 0;
+    padding: 5px 4px;
+    gap: 4px;
+    border-radius: 16px;
+  }
+
+  .card-header {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    min-height: 42px;
+    gap: 2px 4px;
+    padding: 0 0 2px;
+    align-items: center;
+    align-content: start;
+  }
+
+  .card-title-row {
+    display: contents;
+  }
+
+  .card-title-row h3 {
+    grid-row: 1;
+    grid-column: 2;
+    align-self: center;
+    text-align: center;
+  }
+
+  .card-topline {
+    grid-row: 1;
+    grid-column: 1;
+    justify-content: flex-start;
+    align-items: center;
+    align-self: center;
+    min-width: 0;
+  }
+
+  .card-title-row .voicing-chip {
+    grid-row: 1;
+    grid-column: 3;
+    align-self: center;
+    justify-self: end;
+    margin-left: 0;
   }
 
   .card-actions {
+    justify-content: center;
+    align-items: center;
+  }
+
+  .chord-card h3 {
+    font-size: 15px;
+    text-align: center;
+  }
+
+  .diagram-wrap {
+    align-items: flex-start;
+    height: 112px;
+    min-height: 112px;
+    padding: 0;
+  }
+
+  .chord-diagram {
+    width: min(100%, 106px);
+    transform: translateY(-8px);
+  }
+
+  .card-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 62px);
+    width: auto;
+    max-width: 100%;
+    justify-content: center;
+    gap: 3px;
+    padding-top: 0;
+  }
+
+  .theory-chip,
+  .voicing-chip,
+  .preview-chord,
+  .swap-shape {
+    max-width: 100%;
+    justify-content: center;
+    text-align: center;
+    white-space: normal;
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: none;
+    font-size: 6px;
+    padding: 3px 6px;
+  }
+
+  .preview-chord {
+    min-width: 0;
+  }
+
+  .preview-chord,
+  .swap-shape {
+    flex: none;
     width: 100%;
   }
 }
 
 @media (max-width: 620px) {
   .control-block-header-split {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px;
   }
 
-  .action-cluster {
-    width: 100%;
-    justify-content: start;
+  .rhythm-actions {
+    width: auto;
+    justify-content: end;
+    gap: 3px;
   }
 
   .key-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(60px, 72px) minmax(0, 1fr);
+    gap: 4px;
+    align-items: end;
+  }
+
+  .voicings-block,
+  .key-block,
+  .control-block[aria-labelledby='rhythm-heading'] {
+    gap: 3px;
+  }
+
+  .control-block[aria-labelledby='rhythm-heading'] > .field:first-of-type {
+    gap: 2px;
+  }
+
+  .key-block .aligned-control-header,
+  .voicings-block .aligned-control-header {
+    grid-template-rows: auto;
+    gap: 2px;
+  }
+
+  .transport-toggle {
+    gap: 3px;
+    padding: 2px 5px;
+    font-size: 8px;
+  }
+
+  .transport-button {
+    padding: 3px 7px;
+    font-size: 9px;
+    white-space: nowrap;
   }
 }
 
@@ -1453,18 +1880,28 @@ input[type='range'] {
     font-size: 12px;
   }
 
-  .toggle-pair,
-  .rhythm-fields,
-  .checkbox-field,
-  .checkbox-field-group,
-  .checkbox-field-group-compact,
-  .tempo-inputs {
-    grid-template-columns: 1fr;
+  .key-row {
+    grid-template-columns: minmax(54px, 62px) minmax(0, 1fr);
+    gap: 3px;
   }
 
   .mode-segmented,
   .inline-mode-segmented {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2px;
+  }
+
+  .toggle-pair,
+  .rhythm-fields,
+  .checkbox-field,
+  .checkbox-field-group,
+  .checkbox-field-group-compact {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 132px), 1fr));
+  }
+
+  .tempo-inputs {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px;
   }
 
   .panel h2 {
@@ -1476,11 +1913,128 @@ input[type='range'] {
     gap: 4px;
   }
 
+  .voicings-block,
+  .key-block,
+  .control-block[aria-labelledby='rhythm-heading'] {
+    gap: 2px;
+  }
+
+  .control-block[aria-labelledby='rhythm-heading'] > .field:first-of-type {
+    gap: 1px;
+  }
+
   .toggle-row,
   .segmented label,
   .checkbox-field label,
   select,
   input[type='number'] {
     font-size: 9px;
+  }
+
+  .rhythm-actions {
+    gap: 2px;
+  }
+
+  .transport-toggle {
+    gap: 2px;
+    padding: 2px 4px;
+    font-size: 7px;
+  }
+
+  .transport-button {
+    padding: 2px 6px;
+    font-size: 8px;
+  }
+
+  .card-actions {
+    grid-template-columns: repeat(2, 56px);
+  }
+
+  .progression-key {
+    gap: 3px;
+    padding: 0 1px;
+  }
+
+  .progression-key-label {
+    font-size: 6px;
+  }
+
+  .progression-key-title {
+    font-size: 14px;
+  }
+
+  .progression-loop-name {
+    font-size: 7px;
+  }
+
+  .chord-card {
+    padding: 4px 3px;
+    gap: 3px;
+    border-radius: 14px;
+  }
+
+  .chord-card h3 {
+    font-size: 13px;
+  }
+
+  .diagram-wrap {
+    height: 96px;
+    min-height: 96px;
+  }
+
+  .chord-diagram {
+    width: min(100%, 88px);
+    transform: translateY(-9px);
+  }
+
+  .card-actions {
+    gap: 2px;
+  }
+}
+
+@media (max-width: 360px) {
+  .key-row {
+    grid-template-columns: minmax(42px, 50px) minmax(0, 1fr);
+    gap: 2px;
+  }
+
+  .key-root-field select {
+    padding-inline: 4px 16px;
+    font-size: 8px;
+  }
+
+  .mode-segmented,
+  .inline-mode-segmented {
+    gap: 0;
+  }
+
+  .segmented label {
+    gap: 2px;
+    padding-inline: 2px;
+    font-size: 8px;
+  }
+
+  .segmented input {
+    transform: scale(0.9);
+  }
+
+  .rhythm-actions {
+    gap: 1px;
+  }
+
+  .transport-toggle {
+    gap: 1px;
+    padding: 1px 3px;
+    font-size: 6px;
+  }
+
+  .transport-toggle input {
+    width: 10px;
+    height: 10px;
+  }
+
+  .transport-button {
+    padding: 2px 5px;
+    font-size: 7px;
   }
 }
