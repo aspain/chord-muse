@@ -210,9 +210,7 @@ select:focus-visible {
 }
 
 .status-strip {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  display: none;
 }
 
 .control-grid {
@@ -860,6 +858,202 @@ input[type='range'] {
   }
 }
 
+@media (max-width: 1040px) {
+  :root {
+    --control-height: 40px;
+    --radius: 22px;
+  }
+
+  body {
+    font-size: 15px;
+  }
+
+  .page-shell {
+    padding: 7px;
+  }
+
+  .panel {
+    padding: 7px;
+    gap: 6px;
+  }
+
+  .panel-heading {
+    padding: 2px 2px 1px;
+  }
+
+  .control-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .control-grid > .control-block:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .control-block {
+    gap: 6px;
+    padding: 7px;
+    border-radius: 22px;
+  }
+
+  .control-block-header-split {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 5px;
+  }
+
+  .panel-kicker,
+  .field-label,
+  .segmented-field legend,
+  .checkbox-field legend {
+    font-size: 9px;
+  }
+
+  .toggle-row,
+  .segmented label,
+  .checkbox-field label,
+  select,
+  input[type='number'] {
+    font-size: 12px;
+  }
+
+  .panel h2 {
+    font-size: 18px;
+    line-height: 0.95;
+  }
+
+  .control-block h3 {
+    font-size: 16px;
+  }
+
+  .control-caption {
+    font-size: 9px;
+  }
+
+  .generate-button,
+  .transport-button,
+  .swap-shape,
+  .preview-chord {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  .transport-toggle {
+    gap: 4px;
+    padding: 4px 7px;
+    font-size: 11px;
+  }
+
+  .key-row {
+    grid-template-columns: minmax(82px, 96px) minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .toggle-row,
+  .segmented label,
+  .checkbox-field label {
+    gap: 6px;
+    padding: 5px 8px;
+    border-radius: 12px;
+  }
+
+  select,
+  input[type='number'] {
+    padding: 7px 10px;
+    border-radius: 12px;
+  }
+
+  .toggle-pair,
+  .rhythm-fields,
+  .checkbox-field,
+  .checkbox-field-group,
+  .checkbox-field-group-compact,
+  .tempo-inputs {
+    gap: 4px 5px;
+  }
+
+  .inline-mode-segmented {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .key-generate-button {
+    min-height: 36px;
+  }
+
+  .tempo-box {
+    gap: 5px;
+  }
+
+  .tempo-box input {
+    width: 58px;
+  }
+
+  .beat-header,
+  .beat-row {
+    gap: 6px;
+  }
+
+  .beat-dot {
+    min-height: 10px;
+  }
+
+  .progression-key {
+    width: 148px;
+    gap: 4px;
+    padding: 0 2px 0 6px;
+  }
+
+  .progression-key-title {
+    font-size: 22px;
+  }
+
+  .progression-loop-name {
+    font-size: 10px;
+  }
+
+  .progression-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    width: 100%;
+  }
+
+  .chord-card {
+    min-height: 214px;
+    padding: 8px;
+    gap: 6px;
+    border-radius: 20px;
+  }
+
+  .card-header {
+    min-height: 50px;
+    gap: 6px;
+  }
+
+  .chord-card h3 {
+    font-size: 20px;
+  }
+
+  .diagram-wrap {
+    height: 148px;
+    min-height: 148px;
+  }
+
+  .chord-diagram {
+    width: min(100%, 156px);
+  }
+
+  .theory-chip,
+  .voicing-chip,
+  .preview-chord,
+  .swap-shape {
+    font-size: 7px;
+    padding: 4px 7px;
+  }
+
+  .preview-chord {
+    min-width: 62px;
+  }
+}
+
 @media (max-height: 900px) and (min-width: 1100px) {
   .control-caption {
     display: none;
@@ -987,26 +1181,255 @@ input[type='range'] {
 }
 
 @media (max-width: 860px) {
-  .control-grid,
-  .progression-grid,
-  .status-strip,
+  :root {
+    --control-height: 36px;
+    --radius: 20px;
+  }
+
+  body {
+    font-size: 14px;
+  }
+
+  .page-shell {
+    padding: 6px;
+  }
+
+  .panel {
+    padding: 6px;
+    gap: 5px;
+  }
+
+  .control-block {
+    --control-rail: 1px;
+    padding: 6px;
+    gap: 5px;
+    border-radius: 18px;
+  }
+
+  .panel h2 {
+    font-size: 16px;
+    line-height: 0.96;
+  }
+
+  .key-row {
+    grid-template-columns: minmax(74px, 84px) minmax(0, 1fr);
+    gap: 5px;
+  }
+
+  .mode-segmented,
+  .inline-mode-segmented {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 3px;
+  }
+
   .toggle-pair,
   .rhythm-fields,
-  .tempo-inputs,
-  .checkbox-field {
-    grid-template-columns: 1fr;
+  .checkbox-field,
+  .checkbox-field-group,
+  .checkbox-field-group-compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3px 4px;
+  }
+
+  .tempo-inputs {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .toggle-row,
+  .segmented label,
+  .checkbox-field label,
+  select,
+  input[type='number'] {
+    font-size: 11px;
+  }
+
+  .toggle-row,
+  .segmented label,
+  .checkbox-field label {
+    padding: 4px 7px;
+    border-radius: 10px;
+  }
+
+  select,
+  input[type='number'] {
+    padding: 6px 8px;
+    border-radius: 10px;
+  }
+
+  .transport-toggle {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+
+  .generate-button,
+  .transport-button {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+
+  .key-generate-button {
+    min-height: 32px;
+  }
+
+  .panel-kicker,
+  .field-label,
+  .segmented-field legend,
+  .checkbox-field legend {
+    font-size: 8px;
+  }
+
+  .control-caption {
+    font-size: 8px;
+  }
+
+  .progression-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .progression-grid.progression-grid-empty {
     width: 100%;
   }
 
-  .checkbox-field-group,
-  .checkbox-field-group-compact {
+  .progression-key {
+    width: 126px;
+    padding-left: 4px;
+  }
+
+  .progression-key-title {
+    font-size: 18px;
+  }
+
+  .chord-card {
+    min-height: 190px;
+    padding: 6px;
+    gap: 5px;
+    border-radius: 18px;
+  }
+
+  .card-header {
+    min-height: 42px;
+    gap: 5px;
+  }
+
+  .chord-card h3 {
+    font-size: 17px;
+  }
+
+  .diagram-wrap {
+    height: 126px;
+    min-height: 126px;
+  }
+
+  .chord-diagram {
+    width: min(100%, 136px);
+  }
+
+  .action-cluster {
+    width: auto;
+    justify-content: end;
+    gap: 4px;
+  }
+
+  .empty-state-fretboard {
+    width: 100%;
+  }
+}
+
+@media (max-width: 780px) {
+  .control-grid {
     grid-template-columns: 1fr;
   }
 
-  .segmented {
+  .control-grid > .control-block:last-child {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  :root {
+    --control-height: 34px;
+    --radius: 18px;
+  }
+
+  body {
+    font-size: 13px;
+  }
+
+  .page-shell {
+    padding: 5px;
+  }
+
+  .panel {
+    padding: 5px;
+    gap: 5px;
+  }
+
+  .control-block {
+    padding: 5px;
+  }
+
+  .toggle-row,
+  .segmented label,
+  .checkbox-field label,
+  select,
+  input[type='number'] {
+    font-size: 10px;
+  }
+
+  .mode-segmented,
+  .inline-mode-segmented {
+    gap: 3px;
+  }
+
+  .panel-kicker,
+  .field-label,
+  .segmented-field legend,
+  .checkbox-field legend {
+    font-size: 7px;
+  }
+
+  .control-caption {
+    font-size: 7px;
+  }
+
+  .toggle-row,
+  .segmented label,
+  .checkbox-field label {
+    padding: 4px 6px;
+  }
+
+  .generate-button,
+  .transport-button {
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+
+  .transport-toggle {
+    font-size: 9px;
+    padding: 3px 5px;
+  }
+
+  .tempo-box input {
+    width: 50px;
+  }
+
+  .beat-dot {
+    min-height: 8px;
+  }
+
+  .progression-grid {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .card-actions {
+    width: 100%;
+  }
+}
+
+@media (max-width: 620px) {
+  .control-block-header-split {
     grid-template-columns: 1fr;
   }
 
@@ -1015,30 +1438,49 @@ input[type='range'] {
     justify-content: start;
   }
 
-  .control-block-header-split {
+  .key-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 540px) {
+  :root {
+    --control-height: 32px;
+    --radius: 16px;
+  }
+
+  body {
+    font-size: 12px;
+  }
+
+  .toggle-pair,
+  .rhythm-fields,
+  .checkbox-field,
+  .checkbox-field-group,
+  .checkbox-field-group-compact,
+  .tempo-inputs {
     grid-template-columns: 1fr;
   }
 
-  .key-row,
-  .mode-segmented {
-    grid-template-columns: 1fr;
-  }
-
+  .mode-segmented,
   .inline-mode-segmented {
     grid-template-columns: 1fr;
   }
 
-  .empty-state-fretboard {
-    width: 100%;
-  }
-}
-
-@media (max-width: 720px) {
-  .page-shell {
-    padding: 12px;
+  .panel h2 {
+    font-size: 14px;
   }
 
-  .card-actions {
-    width: 100%;
+  .control-block {
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .toggle-row,
+  .segmented label,
+  .checkbox-field label,
+  select,
+  input[type='number'] {
+    font-size: 9px;
   }
 }
