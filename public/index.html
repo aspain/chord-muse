@@ -87,27 +87,24 @@
 
         <div class="control-grid">
           <section class="control-block key-block" aria-label="Key and generation controls">
-            <div class="control-block-header aligned-control-header">
-              <p class="panel-kicker">Key</p>
-            </div>
-
             <div class="key-row">
-              <label class="field key-root-field">
-                <span class="field-label field-label-with-help">
-                  <span>Key</span>
-                  <span
+              <div class="field key-root-field">
+                <div class="field-label-row">
+                  <label class="field-label" for="key-root-select">Key</label>
+                  <button
+                    type="button"
                     class="field-help"
-                    tabindex="0"
-                    aria-label="If some keys are unavailable, enable more chord shape options to expand the list."
+                    aria-label="Key selection help"
+                    aria-describedby="key-root-help-tooltip"
                   >
                     i
-                    <span class="field-help-tooltip" role="tooltip">
+                    <span id="key-root-help-tooltip" class="field-help-tooltip" role="tooltip">
                       If some keys are unavailable, enable more chord shape options to expand the list.
                     </span>
-                  </span>
-                </span>
+                  </button>
+                </div>
                 <select id="key-root-select"></select>
-              </label>
+              </div>
               <label class="field key-diagram-field">
                 <span class="field-label">Diagram</span>
                 <span class="toggle-row key-utility-toggle">

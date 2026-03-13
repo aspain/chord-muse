@@ -367,17 +367,20 @@ select:focus-visible {
   min-inline-size: 0;
 }
 
+.control-grid .panel-kicker,
 .field-label,
 .segmented-field legend,
-.checkbox-field legend {
+.checkbox-field legend,
+.beat-header span {
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-weight: 800;
-  color: var(--muted);
+  color: var(--accent-deep);
+  font-family: inherit;
 }
 
-.field-label-with-help {
+.field-label-row {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -390,6 +393,7 @@ select:focus-visible {
   justify-content: center;
   inline-size: 16px;
   block-size: 16px;
+  padding: 0;
   border-radius: 999px;
   border: 1px solid rgba(96, 61, 36, 0.22);
   background: rgba(255, 255, 255, 0.72);
@@ -399,6 +403,8 @@ select:focus-visible {
   line-height: 1;
   text-transform: none;
   cursor: help;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 .field-help:focus-visible {
@@ -1034,6 +1040,28 @@ input[type='radio'] {
     max-width: 1800px;
   }
 
+  .key-block .field-label-row,
+  .key-block .key-diagram-field > .field-label {
+    transform: translateY(-12px);
+  }
+
+  .key-block .key-row {
+    margin-top: 6px;
+  }
+
+  .key-block .mode-inline-field {
+    padding-top: 8px;
+  }
+
+  .key-block .mode-inline-field legend {
+    padding-block: 2px;
+    margin-bottom: 4px;
+  }
+
+  .key-block .key-generate-button {
+    margin-top: 12px;
+  }
+
   .progression-body {
     position: static;
     min-height: 0;
@@ -1315,10 +1343,11 @@ input[type='range'] {
     gap: 5px;
   }
 
-  .panel-kicker,
+  .control-grid .panel-kicker,
   .field-label,
   .segmented-field legend,
-  .checkbox-field legend {
+  .checkbox-field legend,
+  .beat-header span {
     font-size: 9px;
   }
 
@@ -1575,6 +1604,28 @@ input[type='range'] {
     font-size: clamp(22px, 1.8vw, 28px);
   }
 
+  .key-block .field-label-row,
+  .key-block .key-diagram-field > .field-label {
+    transform: translateY(-16px);
+  }
+
+  .key-block .key-row {
+    margin-top: 18px;
+  }
+
+  .key-block .mode-inline-field {
+    padding-top: 4px;
+  }
+
+  .key-block .mode-inline-field legend {
+    padding-block: 2px;
+    margin-bottom: 4px;
+  }
+
+  .key-block .key-generate-button {
+    margin-top: 12px;
+  }
+
   .key-row {
     grid-template-columns: minmax(82px, 98px) minmax(0, 1fr);
     gap: 8px;
@@ -1781,10 +1832,11 @@ input[type='range'] {
     min-height: 32px;
   }
 
-  .panel-kicker,
+  .control-grid .panel-kicker,
   .field-label,
   .segmented-field legend,
-  .checkbox-field legend {
+  .checkbox-field legend,
+  .beat-header span {
     font-size: 8px;
   }
 
@@ -1893,10 +1945,11 @@ input[type='range'] {
     gap: 3px;
   }
 
-  .panel-kicker,
+  .control-grid .panel-kicker,
   .field-label,
   .segmented-field legend,
-  .checkbox-field legend {
+  .checkbox-field legend,
+  .beat-header span {
     font-size: 7px;
   }
 
