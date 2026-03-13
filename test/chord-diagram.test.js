@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 import { hydrateChordLibrary } from '../public/js/chord-library.js';
-import { buildDiagramModel } from '../public/js/chord-diagram.js';
+import { buildDiagramModel, renderChordDiagram } from '../public/js/chord-diagram.js';
 
 async function loadShape(shapeId) {
   const file = new URL('../public/data/chord-shapes.json', import.meta.url);
@@ -39,4 +39,17 @@ test('high-position shapes render inside a fixed five-fret viewport', () => {
   assert.equal(model.baseFret, 7);
   assert.equal(model.visibleFrets, 5);
   assert.deepEqual(model.markers.map((marker) => marker.y), [88, 88, 40]);
+});
+
+test('high-position diagrams place the base fret label beside the top displayed fret', () => {
+  const shape = {
+    frets: [-1, 5, 7, 7, -1, -1],
+    fingers: [0, 1, 3, 4, 0, 0],
+    barres: [],
+    baseFret: 5
+  };
+
+  const svg = renderChordDiagram(shape);
+
+  assert.match(svg, /<text x="0" y="28" class="diagram-basefret">5fr<\/text>/);
 });

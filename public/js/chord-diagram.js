@@ -86,8 +86,9 @@ export function renderChordDiagram(shape, options = {}) {
   const model = buildDiagramModel(shape, options);
   const bottomY = 28 + model.visibleFrets * 24;
   const viewBoxHeight = bottomY + 18;
+  const baseFretLabelY = yForFret(0);
   const baseFretText = model.baseFret > 1
-    ? `<text x="0" y="82" class="diagram-basefret">${model.baseFret}fr</text>`
+    ? `<text x="0" y="${baseFretLabelY}" class="diagram-basefret">${model.baseFret}fr</text>`
     : '';
 
   const strings = Array.from({ length: 6 }, (_, index) => {
