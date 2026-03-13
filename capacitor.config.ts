@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.adamspain.chordmuse',
-  appName: 'Chord Muse',
+  appId: 'com.adamspain.strumforge',
+  appName: 'StrumForge',
   webDir: 'dist/capacitor',
   ios: {
     contentInset: 'never',

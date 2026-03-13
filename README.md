@@ -1,18 +1,18 @@
-# chord-muse
+# StrumForge
 
-`chord-muse` is a static guitar practice tool that now supports two delivery targets from the same repo:
+`StrumForge` is a static guitar practice tool that now supports two delivery targets from the same repo:
 
-- the existing public website at [adamspain.com/chord-muse](https://adamspain.com/chord-muse)
+- the existing public website at [adamspain.com/strumforge](https://adamspain.com/strumforge)
 - a new iOS app built as a Capacitor wrapper around the same web app
 
-The web UI and music logic still live in [`public/`](/Users/aspain/Documents/git/chord-muse/public). The iOS wrapper lives in [`ios/`](/Users/aspain/Documents/git/chord-muse/ios) and consumes a staged copy of the site from `dist/capacitor`.
+The web UI and music logic still live in [`public/`](public). The iOS wrapper lives in [`ios/`](ios) and consumes a staged copy of the site from `dist/capacitor`.
 
-![Chord Muse preview](public/chord-muse-preview.png)
+![StrumForge preview](public/strumforge-preview.png)
 
 ## What changed for iOS v1
 
 - Capacitor project config at the repo root
-- Native iOS project in [`ios/`](/Users/aspain/Documents/git/chord-muse/ios)
+- Native iOS project in [`ios/`](ios)
 - Offline-safe native asset staging via `npm run native:prepare`
 - Local font stacks instead of Google Fonts so the installed app works fully offline
 - Safe-area and smaller-iPhone layout tuning
@@ -24,7 +24,7 @@ The web UI and music logic still live in [`public/`](/Users/aspain/Documents/git
 - `npm test`
   Runs the existing node test suite.
 - `npm run native:prepare`
-  Copies [`public/`](/Users/aspain/Documents/git/chord-muse/public) to `dist/capacitor` for Capacitor.
+  Copies [`public/`](public) to `dist/capacitor` for Capacitor.
 - `npm run native:copy`
   Rebuilds the staged native web bundle and copies it into the iOS project.
 - `npm run native:sync`
