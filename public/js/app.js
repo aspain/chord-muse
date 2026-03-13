@@ -3,6 +3,7 @@ import { loadChordLibrary, selectShapeSequence } from './chord-library.js';
 import { renderChordDiagram } from './chord-diagram.js';
 import { getKeyTonicName, listPitchClasses } from './music-theory.js';
 import { moveIndex, moveIndexedValues, moveItem } from './reorder-utils.js';
+import { parseCommittedTempo, parseTempoDraft } from './tempo-utils.js';
 import {
   generateProgression,
   rebuildProgression,
@@ -701,11 +702,22 @@ function regenerateProgression() {
 }
 
 function syncTempo(value) {
-  const nextTempo = Math.max(50, Math.min(180, Number(value) || 92));
+  const nextTempo = parseCommittedTempo(value, state.tempo);
   state.tempo = nextTempo;
   elements.tempoSlider.value = String(nextTempo);
   elements.tempoNumber.value = String(nextTempo);
   audioEngine.setTempo(nextTempo);
+}
+
+function handleTempoNumberInput(value) {
+  const draft = parseTempoDraft(value);
+  if (draft.state === 'valid') {
+    syncTempo(draft.value);
+  }
+}
+
+function finalizeTempoNumberInput(value) {
+  syncTempo(value === '' ? state.tempo : value);
 }
 
 function readEnabledShapeTypes() {
@@ -875,7 +887,9 @@ function attachEventListeners() {
   });
 
   elements.tempoSlider.addEventListener('input', () => syncTempo(elements.tempoSlider.value));
-  elements.tempoNumber.addEventListener('input', () => syncTempo(elements.tempoNumber.value));
+  elements.tempoNumber.addEventListener('input', () => handleTempoNumberInput(elements.tempoNumber.value));
+  elements.tempoNumber.addEventListener('change', () => finalizeTempoNumberInput(elements.tempoNumber.value));
+  elements.tempoNumber.addEventListener('blur', () => finalizeTempoNumberInput(elements.tempoNumber.value));
 
   elements.meterSelect.addEventListener('change', () => {
     state.meter = elements.meterSelect.value;
