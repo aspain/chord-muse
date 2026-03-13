@@ -6,22 +6,22 @@ export const LOCKED_KEY_CHORD_SHAPES_WARNING = 'That key does not fit your curre
 
 export const PROGRESSION_TEMPLATES = {
   major: [
-    { id: 'anthem-rise', degrees: [1, 5, 6, 4], weight: 1.4 },
-    { id: 'campfire-resolve', degrees: [1, 4, 5, 1], weight: 1.25 },
-    { id: 'warm-loop', degrees: [1, 6, 4, 5], weight: 1.2 },
-    { id: 'lift-and-return', degrees: [6, 4, 1, 5], weight: 1.0 },
-    { id: 'gentle-passing', degrees: [1, 3, 4, 5], weight: 0.72 },
-    { id: 'open-road', degrees: [1, 6, 2, 5], weight: 0.92 },
-    { id: 'open-lift', degrees: [1, 3, 6, 5], weight: 0.88 },
-    { id: 'open-homecoming', degrees: [6, 2, 5, 1], weight: 0.84 },
-    { id: 'open-drift', degrees: [1, 5, 3, 6], weight: 0.8 }
+    { degrees: [1, 5, 6, 4], weight: 1.4 },
+    { degrees: [1, 4, 5, 1], weight: 1.25 },
+    { degrees: [1, 6, 4, 5], weight: 1.2 },
+    { degrees: [6, 4, 1, 5], weight: 1.0 },
+    { degrees: [1, 3, 4, 5], weight: 0.72 },
+    { degrees: [1, 6, 2, 5], weight: 0.92 },
+    { degrees: [1, 3, 6, 5], weight: 0.88 },
+    { degrees: [6, 2, 5, 1], weight: 0.84 },
+    { degrees: [1, 5, 3, 6], weight: 0.8 }
   ],
   minor: [
-    { id: 'moody-cycle', degrees: [1, 7, 6, 7], weight: 1.3 },
-    { id: 'cinematic-minor', degrees: [1, 6, 3, 7], weight: 1.1 },
-    { id: 'minor-folk', degrees: [1, 4, 6, 7], weight: 1.0 },
-    { id: 'fall-and-rise', degrees: [6, 7, 1, 1], weight: 0.9 },
-    { id: 'dark-return', degrees: [1, 4, 1, 7], weight: 0.88 }
+    { degrees: [1, 7, 6, 7], weight: 1.3 },
+    { degrees: [1, 6, 3, 7], weight: 1.1 },
+    { degrees: [1, 4, 6, 7], weight: 1.0 },
+    { degrees: [6, 7, 1, 1], weight: 0.9 },
+    { degrees: [1, 4, 1, 7], weight: 0.88 }
   ]
 };
 
@@ -212,7 +212,6 @@ function buildPlan(rootPitchClass, mode, template, enabledShapeTypes, enabledFla
   return {
     rootPitchClass,
     mode,
-    template,
     resolvedChoices,
     weight: template.weight * comfortWeight
   };
@@ -286,7 +285,6 @@ export function generateProgression(state, library, rng = Math.random) {
   return {
     keyRoot: selectedPlan.rootPitchClass,
     mode: selectedPlan.mode,
-    templateId: selectedPlan.template.id,
     chords,
     warning: ''
   };
@@ -344,7 +342,6 @@ export function rebuildProgression(existingProgression, state, library) {
   return {
     keyRoot: targetRoot,
     mode: targetMode,
-    templateId: existingProgression.templateId,
     chords,
     warning: ''
   };

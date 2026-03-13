@@ -18,7 +18,7 @@ const state = {
   leftHanded: false,
   tempo: 92,
   meter: '4/4',
-  groove: 'folk-pop',
+  groove: 'groove-44-2',
   playDrums: true,
   playChords: false,
   activeChordIndex: -1,
@@ -689,7 +689,6 @@ function attachEventListeners() {
   document.querySelectorAll('input[name="mode-preference"]').forEach((node) => {
     node.addEventListener('change', () => {
       state.modePreference = document.querySelector('input[name="mode-preference"]:checked').value;
-      renderKeyOptions();
       refreshProgression('preserve');
     });
   });

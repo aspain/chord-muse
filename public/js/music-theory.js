@@ -186,10 +186,6 @@ export function buildChordDefinition(rootPitchClass, mode, degree, qualityOverri
   };
 }
 
-export function buildScale(mode, rootPitchClass) {
-  return SCALE_INTERVALS[mode].map((interval) => transposePitchClass(rootPitchClass, interval));
-}
-
 export function listPitchClasses() {
   return FRIENDLY_NOTES.map((_, index) => index);
 }

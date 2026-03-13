@@ -137,25 +137,26 @@ test('generateProgression spells diatonic chords according to the locked key sig
 
 test('generateProgression offers multiple open-chord major loops when the key is locked to C', async () => {
   const library = await loadLibrary();
-  const templateIds = new Set(
-    [0, 0.82, 0.9, 0.97, 0.999].map((rngValue) => {
-      const progression = generateProgression(
-        {
-          keyLocked: true,
-          keyRoot: 0,
-          modePreference: 'major',
-          enabledShapeTypes: new Set(['open']),
-          enabledFlavorOptions: new Set()
-        },
-        library,
-        () => rngValue
-      );
-      assert.equal(progression.warning, '');
-      return progression.templateId;
-    })
+  const progressions = [0, 0.82, 0.9, 0.97, 0.999].map((rngValue) => {
+    const progression = generateProgression(
+      {
+        keyLocked: true,
+        keyRoot: 0,
+        modePreference: 'major',
+        enabledShapeTypes: new Set(['open']),
+        enabledFlavorOptions: new Set()
+      },
+      library,
+      () => rngValue
+    );
+    assert.equal(progression.warning, '');
+    return progression;
+  });
+  const degreeSequences = new Set(
+    progressions.map((progression) => progression.chords.map((chord) => chord.degree).join('-'))
   );
 
-  assert.ok(templateIds.size > 1, 'Expected more than one open-chord template for locked C major');
+  assert.ok(degreeSequences.size > 1, 'Expected more than one open-chord loop for locked C major');
 });
 
 test('getFeasibleKeyRoots reflects open-chord-friendly keys for the current settings', async () => {
@@ -279,7 +280,6 @@ test('rebuildProgression preserves degree sequence while switching mode without 
 
   assert.equal(rebuilt.warning, '');
   assert.equal(rebuilt.mode, 'minor');
-  assert.equal(rebuilt.templateId, progression.templateId);
   assert.deepEqual(
     rebuilt.chords.map((chord) => chord.degree),
     progression.chords.map((chord) => chord.degree)
@@ -340,7 +340,6 @@ test('rebuildProgression with reharmonize upgrades eligible chords to sevenths w
   );
 
   assert.equal(rebuilt.warning, '');
-  assert.equal(rebuilt.templateId, progression.templateId);
   assert.deepEqual(
     rebuilt.chords.map((chord) => chord.degree),
     progression.chords.map((chord) => chord.degree)
@@ -373,7 +372,6 @@ test('rebuildProgression with reharmonize upgrades eligible major chords to sus/
   );
 
   assert.equal(rebuilt.warning, '');
-  assert.equal(rebuilt.templateId, progression.templateId);
   assert.deepEqual(
     rebuilt.chords.map((chord) => chord.degree),
     progression.chords.map((chord) => chord.degree)

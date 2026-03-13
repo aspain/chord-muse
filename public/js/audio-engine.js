@@ -1,6 +1,6 @@
 export const GROOVES = [
   {
-    id: 'straight-rock',
+    id: 'groove-44-1',
     label: 'Groove 1',
     meter: '4/4',
     beatsPerBar: 4,
@@ -18,7 +18,7 @@ export const GROOVES = [
     }
   },
   {
-    id: 'folk-pop',
+    id: 'groove-44-2',
     label: 'Groove 2',
     meter: '4/4',
     beatsPerBar: 4,
@@ -37,7 +37,7 @@ export const GROOVES = [
     }
   },
   {
-    id: 'indie-bounce',
+    id: 'groove-44-3',
     label: 'Groove 3',
     meter: '4/4',
     beatsPerBar: 4,
@@ -58,7 +58,7 @@ export const GROOVES = [
     }
   },
   {
-    id: 'anthem-drive',
+    id: 'groove-44-4',
     label: 'Groove 4',
     meter: '4/4',
     beatsPerBar: 4,
@@ -78,7 +78,7 @@ export const GROOVES = [
     }
   },
   {
-    id: 'laid-back-soul',
+    id: 'groove-44-5',
     label: 'Groove 5',
     meter: '4/4',
     beatsPerBar: 4,
@@ -99,7 +99,7 @@ export const GROOVES = [
     }
   },
   {
-    id: 'waltz',
+    id: 'groove-34-1',
     label: 'Groove 1',
     meter: '3/4',
     beatsPerBar: 3,
@@ -116,7 +116,7 @@ export const GROOVES = [
     }
   },
   {
-    id: 'country-waltz',
+    id: 'groove-34-2',
     label: 'Groove 2',
     meter: '3/4',
     beatsPerBar: 3,
@@ -136,7 +136,7 @@ export const GROOVES = [
     }
   },
   {
-    id: 'brush-waltz',
+    id: 'groove-34-3',
     label: 'Groove 3',
     meter: '3/4',
     beatsPerBar: 3,
@@ -157,7 +157,7 @@ export const GROOVES = [
     }
   },
   {
-    id: 'compound-six',
+    id: 'groove-68-1',
     label: 'Groove 1',
     meter: '6/8',
     beatsPerBar: 6,
@@ -175,7 +175,7 @@ export const GROOVES = [
     }
   },
   {
-    id: 'lilting-six-eight',
+    id: 'groove-68-2',
     label: 'Groove 2',
     meter: '6/8',
     beatsPerBar: 6,
@@ -196,7 +196,7 @@ export const GROOVES = [
     }
   },
   {
-    id: 'ballad-six-eight',
+    id: 'groove-68-3',
     label: 'Groove 3',
     meter: '6/8',
     beatsPerBar: 6,

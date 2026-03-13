@@ -1,4 +1,4 @@
-import { buildChordId, formatChordLabel, normalizePitchClass } from './music-theory.js';
+import { buildChordId, normalizePitchClass } from './music-theory.js';
 
 const OPEN_STRING_PITCHES = [4, 9, 2, 7, 11, 4];
 const OPEN_STRING_MIDIS = [40, 45, 50, 55, 59, 64];
@@ -26,11 +26,11 @@ function matchesEnabledShapeTypes(shapeCategories, enabledShapeTypes) {
   return requiredShapeTypes.length > 0 && requiredShapeTypes.every((category) => enabledShapeTypes.has(category));
 }
 
-function cloneShape(shape, chordId, chordLabel) {
+function cloneShape(shape, chord) {
   return {
     ...shape,
-    chordId,
-    chordLabel,
+    chordId: chord.id,
+    chordLabel: chord.label,
     frets: [...shape.frets],
     fingers: [...shape.fingers],
     barres: (shape.barres || []).map((barre) => ({ ...barre })),
@@ -62,8 +62,6 @@ function buildMovableShape({
     id,
     pitchClass,
     quality,
-    chordId: buildChordId(pitchClass, quality),
-    chordLabel: formatChordLabel(pitchClass, quality),
     label,
     frets,
     fingers,
@@ -450,11 +448,7 @@ function makeFourthStringShape(rootPitchClass, quality) {
 
 export function hydrateChordLibrary(rawData) {
   return {
-    openShapes: rawData.openShapes.map((shape) => ({
-      ...shape,
-      chordId: buildChordId(shape.pitchClass, shape.quality),
-      chordLabel: formatChordLabel(shape.pitchClass, shape.quality)
-    }))
+    openShapes: rawData.openShapes
   };
 }
 
@@ -481,7 +475,7 @@ export function getCandidateShapesForChord(chord, library, enabledShapeTypes) {
   for (const shape of library.openShapes) {
     if (shape.pitchClass !== chord.pitchClass || shape.quality !== chord.quality) continue;
     if (!matchesEnabledShapeTypes(shape.categories, enabled)) continue;
-    candidates.push(cloneShape(shape, chord.id, chord.label));
+    candidates.push(cloneShape(shape, chord));
   }
 
   const movableFactories = [makeFifthStringBarre, makeSixthStringBarre, makeFourthStringShape, makeAdjacentStringTriads];
@@ -490,7 +484,7 @@ export function getCandidateShapesForChord(chord, library, enabledShapeTypes) {
     const shapes = Array.isArray(builtShapes) ? builtShapes : builtShapes ? [builtShapes] : [];
     for (const shape of shapes) {
       if (!matchesEnabledShapeTypes(shape.categories, enabled)) continue;
-      candidates.push(cloneShape(shape, chord.id, chord.label));
+      candidates.push(cloneShape(shape, chord));
     }
   }
 
