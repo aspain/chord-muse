@@ -554,10 +554,13 @@ function handlePointerEnd(event) {
   const fromIndex = completedSession.sourceIndex;
   const toIndex = completedSession.targetIndex;
   cleanupDragSession(completedSession);
+  if (completedSession.handle instanceof HTMLElement) {
+    completedSession.handle.blur();
+  }
 
   if (wasActivated && fromIndex !== toIndex) {
     moveChord(fromIndex, toIndex, {
-      focusHandle: true,
+      focusHandle: false,
       announceMove: true
     });
   }
