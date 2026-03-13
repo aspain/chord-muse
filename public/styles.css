@@ -153,11 +153,25 @@ select:focus-visible {
 }
 
 .is-native-app .page-footer {
-  display: none;
+  padding-bottom: calc(10px + var(--safe-bottom));
 }
 
 .is-native-app .deck-heading {
   display: none;
+}
+
+.is-native-app .footer-web-only {
+  display: none;
+}
+
+.footer-privacy-link {
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.footer-privacy-link:hover,
+.footer-privacy-link:focus-visible {
+  color: var(--accent-deep);
 }
 
 .footer-star-link {
