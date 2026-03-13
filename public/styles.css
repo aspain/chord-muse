@@ -519,6 +519,30 @@ select:focus-visible {
   transform: translate(0, 0);
 }
 
+@media (hover: none), (pointer: coarse) {
+  .field-help-tooltip {
+    top: calc(100% + 8px);
+    bottom: auto;
+  }
+
+  .field-help-tooltip::after {
+    top: 0;
+    bottom: auto;
+    transform: translateY(-50%) rotate(45deg);
+  }
+}
+
+.is-native-app .field-help-tooltip {
+  top: calc(100% + 8px);
+  bottom: auto;
+}
+
+.is-native-app .field-help-tooltip::after {
+  top: 0;
+  bottom: auto;
+  transform: translateY(-50%) rotate(45deg);
+}
+
 .segmented-field legend,
 .checkbox-field legend {
   padding: 0;
