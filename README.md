@@ -8,6 +8,12 @@ It gives you a playable 4-chord loop, shows you chord diagrams, and lets you pra
 
 ![Chord Muse preview](public/chord-muse-preview.png)
 
+## License
+
+Copyright (c) 2026 Adam Spain. All rights reserved.
+
+No license is granted for use, copying, modification, or distribution of this code without prior written permission.
+
 ## Features
 
 - Generate a new chord progression with one button
