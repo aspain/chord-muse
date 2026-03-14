@@ -24,6 +24,7 @@ const state = {
   playDrums: true,
   playChords: false,
   activeChordIndex: -1,
+  zoomedChordIndex: null,
   progression: null,
   warningMessage: '',
   shapeOverrides: {},
@@ -36,9 +37,17 @@ const elements = {
   beatCounterLabel: document.getElementById('beat-counter-label'),
   keyRootSelect: document.getElementById('key-root-select'),
   leftHandedToggle: document.getElementById('left-handed-toggle'),
+  keyGenerateSlot: document.getElementById('key-generate-slot'),
+  voicingsGenerateSlot: document.getElementById('voicings-generate-slot'),
   generateButton: document.getElementById('generate-button'),
   progressionKeyDisplay: document.getElementById('progression-key-display'),
   progressionGrid: document.getElementById('progression-grid'),
+  diagramZoomOverlay: document.getElementById('diagram-zoom-overlay'),
+  diagramZoomSheet: document.querySelector('.diagram-zoom-sheet'),
+  diagramZoomTitle: document.getElementById('diagram-zoom-title'),
+  diagramZoomViewport: document.getElementById('diagram-zoom-viewport'),
+  diagramZoomBody: document.getElementById('diagram-zoom-body'),
+  diagramZoomCloseButton: document.querySelector('.diagram-zoom-close'),
   playDrumsToggle: document.getElementById('play-drums-toggle'),
   playChordsToggle: document.getElementById('play-chords-toggle'),
   transportButton: document.getElementById('transport-button'),
@@ -53,6 +62,12 @@ const elements = {
 let chordLibrary;
 let reorderStatus;
 let dragSession = null;
+let diagramZoomTrigger = null;
+let diagramZoomGestureSession = null;
+let diagramZoomStepTimer = null;
+const stackedControlsQuery = typeof window.matchMedia === 'function'
+  ? window.matchMedia('(max-width: 780px), (orientation: portrait) and (min-width: 700px) and (max-width: 1100px)')
+  : null;
 const audioEngine = new AudioEngine(({ beatIndex, chordIndex }) => {
   renderBeatPulse(beatIndex);
   setActiveChord(chordIndex);
@@ -123,6 +138,296 @@ function installSelectionSuppression() {
 
   document.addEventListener('selectstart', blockSelection);
   document.addEventListener('dragstart', blockSelection);
+}
+
+function syncGenerateButtonPlacement() {
+  const targetSlot = stackedControlsQuery?.matches
+    ? elements.voicingsGenerateSlot
+    : elements.keyGenerateSlot;
+  if (!targetSlot || elements.generateButton.parentElement === targetSlot) return;
+  targetSlot.append(elements.generateButton);
+}
+
+function installGenerateButtonLayoutSync() {
+  syncGenerateButtonPlacement();
+  if (!stackedControlsQuery) return;
+
+  const handleChange = () => syncGenerateButtonPlacement();
+  if (typeof stackedControlsQuery.addEventListener === 'function') {
+    stackedControlsQuery.addEventListener('change', handleChange);
+    return;
+  }
+
+  if (typeof stackedControlsQuery.addListener === 'function') {
+    stackedControlsQuery.addListener(handleChange);
+  }
+}
+
+function clearDiagramZoomStepTimer() {
+  if (diagramZoomStepTimer) {
+    window.clearTimeout(diagramZoomStepTimer);
+    diagramZoomStepTimer = null;
+  }
+}
+
+function getWrappedZoomIndex(index, offset, total = state.progression?.chords?.length ?? 0) {
+  if (!total) return index;
+  return (index + offset + total) % total;
+}
+
+function setDiagramZoomOffsets({ x = 0, sheetY = 0, trackBase = '-33.333333%' } = {}) {
+  elements.diagramZoomOverlay.style.setProperty('--diagram-zoom-translate-x', `${x}px`);
+  elements.diagramZoomOverlay.style.setProperty('--diagram-zoom-sheet-translate-y', `${sheetY}px`);
+  elements.diagramZoomOverlay.style.setProperty('--diagram-zoom-track-base', trackBase);
+  elements.diagramZoomOverlay.style.setProperty(
+    '--diagram-zoom-backdrop-opacity',
+    String(Math.max(0.32, 1 - Math.abs(sheetY) / 220))
+  );
+}
+
+function renderZoomTrack(selection, centerIndex) {
+  const total = state.progression?.chords?.length ?? 0;
+  if (!total) return '';
+
+  return [-1, 0, 1].map((offset, slideIndex) => {
+    const chordIndex = getWrappedZoomIndex(centerIndex, offset, total);
+    const chord = state.progression.chords[chordIndex];
+    const shape = selection.selected[chordIndex];
+    const isCurrent = slideIndex === 1;
+    return `
+      <div class="diagram-zoom-slide${isCurrent ? ' is-current' : ''}"${isCurrent ? '' : ' aria-hidden="true" inert'}>
+        ${renderChordCardMarkup(chord, shape, {
+          index: chordIndex,
+          selectedIndex: selection.selectedIndices[chordIndex],
+          totalCandidates: selection.candidatesByIndex[chordIndex].length,
+          preferredIndex: selection.preferredIndices[chordIndex],
+          context: 'zoom'
+        })}
+      </div>
+    `;
+  }).join('');
+}
+
+function finalizeAnimatedZoomStep(nextIndex) {
+  clearDiagramZoomStepTimer();
+  state.zoomedChordIndex = nextIndex;
+  elements.diagramZoomBody.classList.add('gesture-active');
+  syncDiagramZoom();
+  window.requestAnimationFrame(() => {
+    elements.diagramZoomBody.classList.remove('gesture-active');
+  });
+}
+
+function animateZoomStep(direction, targetIndex = getWrappedZoomIndex(state.zoomedChordIndex, direction)) {
+  if (!Number.isInteger(direction) || direction === 0 || state.zoomedChordIndex === null) return;
+  if (diagramZoomStepTimer) return;
+
+  clearDiagramZoomStepTimer();
+  elements.diagramZoomBody.classList.remove('gesture-active');
+  setDiagramZoomOffsets({
+    x: 0,
+    sheetY: 0,
+    trackBase: direction > 0 ? '-66.666667%' : '0%'
+  });
+  diagramZoomStepTimer = window.setTimeout(() => finalizeAnimatedZoomStep(targetIndex), 220);
+}
+
+function stepZoom(offset, { animate = true } = {}) {
+  const total = state.progression?.chords?.length ?? 0;
+  if (!total || state.zoomedChordIndex === null) return;
+  const direction = offset > 0 ? 1 : -1;
+  const nextIndex = getWrappedZoomIndex(state.zoomedChordIndex, direction, total);
+  if (!animate) {
+    state.zoomedChordIndex = nextIndex;
+    syncDiagramZoom();
+    return;
+  }
+
+  animateZoomStep(direction, nextIndex);
+}
+
+function syncDiagramZoom({ focusCloseButton = false } = {}) {
+  if (state.zoomedChordIndex === null) return;
+
+  const selection = getSelectedShapes();
+  const chord = state.progression?.chords?.[state.zoomedChordIndex];
+  const shape = selection?.selected?.[state.zoomedChordIndex];
+  if (!chord || !shape) {
+    closeDiagramZoom({ restoreFocus: false });
+    return;
+  }
+
+  elements.diagramZoomTitle.textContent = `${chord.label} chord details`;
+  elements.diagramZoomBody.innerHTML = renderZoomTrack(selection, state.zoomedChordIndex);
+  elements.diagramZoomOverlay.hidden = false;
+  document.body.classList.add('diagram-zoom-open');
+  setDiagramZoomOffsets();
+  setActiveChord(state.activeChordIndex);
+
+  if (focusCloseButton) {
+    window.requestAnimationFrame(() => {
+      elements.diagramZoomCloseButton?.focus({ preventScroll: true });
+    });
+  }
+}
+
+function closeDiagramZoom({ restoreFocus = true } = {}) {
+  if (state.zoomedChordIndex === null && elements.diagramZoomOverlay.hidden) return;
+
+  state.zoomedChordIndex = null;
+  diagramZoomGestureSession = null;
+  clearDiagramZoomStepTimer();
+  elements.diagramZoomOverlay.hidden = true;
+  elements.diagramZoomBody.innerHTML = '';
+  elements.diagramZoomBody.classList.remove('gesture-active');
+  elements.diagramZoomSheet.classList.remove('gesture-active');
+  document.body.classList.remove('diagram-zoom-open');
+  setDiagramZoomOffsets();
+
+  if (restoreFocus && diagramZoomTrigger?.isConnected) {
+    diagramZoomTrigger.focus({ preventScroll: true });
+  }
+
+  diagramZoomTrigger = null;
+}
+
+function openDiagramZoom(index, trigger) {
+  if (!Number.isInteger(index) || index < 0) return;
+
+  const shouldFollowActiveChord = state.playChords && audioEngine.isPlaying && state.activeChordIndex >= 0;
+  state.zoomedChordIndex = shouldFollowActiveChord ? state.activeChordIndex : index;
+  diagramZoomTrigger = trigger instanceof HTMLElement ? trigger : null;
+  syncDiagramZoom({ focusCloseButton: true });
+}
+
+function installDiagramZoomInteractions() {
+  elements.diagramZoomOverlay.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+
+    if (target === elements.diagramZoomOverlay || target.closest('[data-close-diagram-zoom]')) {
+      closeDiagramZoom();
+      return;
+    }
+
+    const navButton = target.closest('[data-zoom-nav]');
+    if (navButton) {
+      stepZoom(Number(navButton.getAttribute('data-zoom-nav')) || 0);
+    }
+  });
+
+  elements.diagramZoomBody.addEventListener('click', (event) => {
+    const previewButton = event.target.closest('[data-preview-chord]');
+    if (previewButton) {
+      previewChord(Number(previewButton.getAttribute('data-preview-chord')));
+      return;
+    }
+
+    const swapButton = event.target.closest('[data-cycle-shape]');
+    if (swapButton) {
+      cycleShape(Number(swapButton.getAttribute('data-cycle-shape')));
+    }
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (elements.diagramZoomOverlay.hidden) return;
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeDiagramZoom();
+      return;
+    }
+
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      stepZoom(-1);
+      return;
+    }
+
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      stepZoom(1);
+    }
+  });
+
+  elements.diagramZoomViewport.addEventListener('pointerdown', (event) => {
+    if (event.pointerType !== 'touch') return;
+    const target = event.target;
+    if (target instanceof Element && target.closest('button')) return;
+
+    diagramZoomGestureSession = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      axis: null
+    };
+    elements.diagramZoomBody.classList.add('gesture-active');
+    elements.diagramZoomSheet.classList.add('gesture-active');
+    elements.diagramZoomViewport.setPointerCapture(event.pointerId);
+  });
+
+  elements.diagramZoomViewport.addEventListener('pointermove', (event) => {
+    if (
+      event.pointerType !== 'touch'
+      || !diagramZoomGestureSession
+      || event.pointerId !== diagramZoomGestureSession.pointerId
+    ) {
+      return;
+    }
+
+    const deltaX = event.clientX - diagramZoomGestureSession.startX;
+    const deltaY = event.clientY - diagramZoomGestureSession.startY;
+    const absX = Math.abs(deltaX);
+    const absY = Math.abs(deltaY);
+
+    if (!diagramZoomGestureSession.axis) {
+      if (Math.max(absX, absY) < 8) return;
+      if (absX > absY * 1.1) {
+        diagramZoomGestureSession.axis = 'horizontal';
+      } else if (absY > absX * 1.1) {
+        diagramZoomGestureSession.axis = 'vertical';
+      } else {
+        return;
+      }
+    }
+
+    if (diagramZoomGestureSession.axis === 'horizontal') {
+      setDiagramZoomOffsets({ x: deltaX, trackBase: '-33.333333%' });
+      return;
+    }
+
+    setDiagramZoomOffsets({ sheetY: deltaY });
+  });
+
+  const finishDiagramZoomGesture = (event) => {
+    if (!diagramZoomGestureSession || event.pointerId !== diagramZoomGestureSession.pointerId) return;
+
+    if (elements.diagramZoomViewport.hasPointerCapture(event.pointerId)) {
+      elements.diagramZoomViewport.releasePointerCapture(event.pointerId);
+    }
+
+    const deltaX = event.clientX - diagramZoomGestureSession.startX;
+    const deltaY = event.clientY - diagramZoomGestureSession.startY;
+    const axis = diagramZoomGestureSession.axis;
+    diagramZoomGestureSession = null;
+    elements.diagramZoomBody.classList.remove('gesture-active');
+    elements.diagramZoomSheet.classList.remove('gesture-active');
+
+    if (axis === 'horizontal' && Math.abs(deltaX) > 72) {
+      stepZoom(deltaX < 0 ? 1 : -1);
+      return;
+    }
+
+    if (axis === 'vertical' && Math.abs(deltaY) > 88) {
+      closeDiagramZoom();
+      return;
+    }
+
+    setDiagramZoomOffsets();
+  };
+
+  elements.diagramZoomViewport.addEventListener('pointerup', finishDiagramZoomGesture);
+  elements.diagramZoomViewport.addEventListener('pointercancel', finishDiagramZoomGesture);
 }
 
 function pauseTransportForBackground() {
@@ -261,12 +566,133 @@ function formatSwapShapeLabel(selectedIndex, totalCandidates, preferredIndex = 0
   return useCompactSwapShapeLabel() ? `Swap (${counter})` : `Swap shape (${counter})`;
 }
 
+function renderChordCardMarkup(
+  chord,
+  shape,
+  {
+    index,
+    selectedIndex,
+    totalCandidates,
+    preferredIndex,
+    context = 'grid'
+  }
+) {
+  const isZoomCard = context === 'zoom';
+  const isPlaying = index === state.activeChordIndex && state.playChords;
+
+  return `
+    <article class="chord-card${isPlaying ? ' playing' : ''}${isZoomCard ? ' diagram-zoom-card' : ''}" data-chord-card="${index}">
+      <div class="card-header">
+        <div class="card-chip-row">
+          <span class="theory-chip card-chip-inline">${chord.theoryChip}</span>
+          <span class="voicing-chip card-chip-inline">${shape.label}</span>
+        </div>
+        <h3>${chord.label}</h3>
+      </div>
+      <div class="diagram-wrap">
+        <div class="diagram-frame">
+          ${renderChordDiagram(shape, { leftHanded: state.leftHanded })}
+          ${isZoomCard ? '' : `
+            <button
+              class="diagram-zoom-button"
+              type="button"
+              data-zoom-diagram="${index}"
+              aria-label="Enlarge ${chord.label} chord diagram"
+              aria-haspopup="dialog"
+              aria-controls="diagram-zoom-overlay"
+            >
+              <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+                <circle cx="8.25" cy="8.25" r="4.75"></circle>
+                <path d="m11.8 11.8 4.2 4.2"></path>
+              </svg>
+            </button>
+          `}
+        </div>
+      </div>
+      <div class="card-actions">
+        <button class="preview-chord" type="button" data-preview-chord="${index}" aria-label="Play ${chord.label}">
+          Play
+        </button>
+        <button
+          class="swap-shape"
+          type="button"
+          data-cycle-shape="${index}"
+          ${totalCandidates < 2 ? 'disabled' : ''}
+        >
+          ${formatSwapShapeLabel(selectedIndex, totalCandidates, preferredIndex)}
+        </button>
+      </div>
+      ${isZoomCard ? '' : `
+        <button
+          class="reorder-handle"
+          type="button"
+          data-reorder-handle="${index}"
+          aria-label="Reorder ${chord.label}"
+          title="Drag to reorder"
+        >
+          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+            <circle cx="5" cy="4" r="1.2"></circle>
+            <circle cx="11" cy="4" r="1.2"></circle>
+            <circle cx="5" cy="8" r="1.2"></circle>
+            <circle cx="11" cy="8" r="1.2"></circle>
+            <circle cx="5" cy="12" r="1.2"></circle>
+            <circle cx="11" cy="12" r="1.2"></circle>
+          </svg>
+        </button>
+      `}
+    </article>
+  `;
+}
+
+function previewChord(index) {
+  if (!state.progression || !Number.isInteger(index)) return;
+  const selection = getSelectedShapes();
+  if (selection?.selected[index]) {
+    audioEngine.playChord(selection.selected[index]);
+  }
+}
+
+function cycleShape(index) {
+  if (!state.progression || !Number.isInteger(index)) return;
+  const selection = getSelectedShapes();
+  if (!selection) return;
+  const total = selection.candidatesByIndex[index].length;
+  const currentIndex = selection.selectedIndices[index];
+  state.shapeOverrides[index] = (currentIndex + 1) % total;
+  renderProgression();
+}
+
 function setActiveChord(index) {
   state.activeChordIndex = Number.isInteger(index) ? index : -1;
-  elements.progressionGrid.querySelectorAll('[data-chord-card]').forEach((card) => {
-    const cardIndex = Number(card.getAttribute('data-chord-card'));
-    card.classList.toggle('playing', cardIndex === state.activeChordIndex && state.playChords);
+  [elements.progressionGrid, elements.diagramZoomBody].forEach((root) => {
+    root?.querySelectorAll('[data-chord-card]').forEach((card) => {
+      const cardIndex = Number(card.getAttribute('data-chord-card'));
+      card.classList.toggle('playing', cardIndex === state.activeChordIndex && state.playChords);
+    });
   });
+
+  if (
+    state.zoomedChordIndex !== null
+    && state.playChords
+    && audioEngine.isPlaying
+    && state.activeChordIndex >= 0
+    && state.zoomedChordIndex !== state.activeChordIndex
+  ) {
+    const total = state.progression?.chords?.length ?? 0;
+    const nextIndex = getWrappedZoomIndex(state.zoomedChordIndex, 1, total);
+    const previousIndex = getWrappedZoomIndex(state.zoomedChordIndex, -1, total);
+    if (state.activeChordIndex === nextIndex) {
+      animateZoomStep(1, state.activeChordIndex);
+      return;
+    }
+    if (state.activeChordIndex === previousIndex) {
+      animateZoomStep(-1, state.activeChordIndex);
+      return;
+    }
+
+    state.zoomedChordIndex = state.activeChordIndex;
+    syncDiagramZoom();
+  }
 }
 
 function updateStatusLine() {
@@ -636,6 +1062,7 @@ function beginPointerReorder(event, handle) {
 function renderEmptyProgression({
   title = NO_PLAYABLE_LOOP_WARNING
 } = {}) {
+  closeDiagramZoom({ restoreFocus: false });
   setActiveChord(-1);
   audioEngine.setChordSequence([]);
   elements.progressionKeyDisplay.innerHTML = '';
@@ -700,55 +1127,16 @@ function renderProgression() {
   `;
   elements.progressionGrid.innerHTML = state.progression.chords.map((chord, index) => {
     const shape = selectedShapes.selected[index];
-    const totalCandidates = selectedShapes.candidatesByIndex[index].length;
-    return `
-      <article class="chord-card${index === state.activeChordIndex && state.playChords ? ' playing' : ''}" data-chord-card="${index}">
-        <div class="card-header">
-          <div class="card-chip-row">
-            <span class="theory-chip card-chip-inline">${chord.theoryChip}</span>
-            <span class="voicing-chip card-chip-inline">${shape.label}</span>
-          </div>
-          <h3>${chord.label}</h3>
-        </div>
-        <div class="diagram-wrap">${renderChordDiagram(shape, { leftHanded: state.leftHanded })}</div>
-        <div class="card-actions">
-          <button class="preview-chord" type="button" data-preview-chord="${index}" aria-label="Play ${chord.label}">
-            Play
-          </button>
-          <button
-            class="swap-shape"
-            type="button"
-            data-cycle-shape="${index}"
-            ${totalCandidates < 2 ? 'disabled' : ''}
-          >
-            ${formatSwapShapeLabel(
-              selectedShapes.selectedIndices[index],
-              totalCandidates,
-              selectedShapes.preferredIndices[index]
-            )}
-          </button>
-        </div>
-        <button
-          class="reorder-handle"
-          type="button"
-          data-reorder-handle="${index}"
-          aria-label="Reorder ${chord.label}"
-          title="Drag to reorder"
-        >
-          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-            <circle cx="5" cy="4" r="1.2"></circle>
-            <circle cx="11" cy="4" r="1.2"></circle>
-            <circle cx="5" cy="8" r="1.2"></circle>
-            <circle cx="11" cy="8" r="1.2"></circle>
-            <circle cx="5" cy="12" r="1.2"></circle>
-            <circle cx="11" cy="12" r="1.2"></circle>
-          </svg>
-        </button>
-      </article>
-    `;
+    return renderChordCardMarkup(chord, shape, {
+      index,
+      selectedIndex: selectedShapes.selectedIndices[index],
+      totalCandidates: selectedShapes.candidatesByIndex[index].length,
+      preferredIndex: selectedShapes.preferredIndices[index]
+    });
   }).join('');
 
   setActiveChord(state.activeChordIndex);
+  syncDiagramZoom();
   updateStatusLine();
   focusPendingHandle();
 }
@@ -879,25 +1267,22 @@ function attachEventListeners() {
   });
 
   elements.progressionGrid.addEventListener('click', (event) => {
+    const zoomButton = event.target.closest('[data-zoom-diagram]');
+    if (zoomButton && state.progression) {
+      const index = Number(zoomButton.getAttribute('data-zoom-diagram'));
+      openDiagramZoom(index, zoomButton);
+      return;
+    }
+
     const previewButton = event.target.closest('[data-preview-chord]');
     if (previewButton && state.progression) {
-      const index = Number(previewButton.getAttribute('data-preview-chord'));
-      const selection = getSelectedShapes();
-      if (selection?.selected[index]) {
-        audioEngine.playChord(selection.selected[index]);
-      }
+      previewChord(Number(previewButton.getAttribute('data-preview-chord')));
       return;
     }
 
     const button = event.target.closest('[data-cycle-shape]');
     if (!button || !state.progression) return;
-    const index = Number(button.getAttribute('data-cycle-shape'));
-    const selection = getSelectedShapes();
-    if (!selection) return;
-    const total = selection.candidatesByIndex[index].length;
-    const currentIndex = selection.selectedIndices[index];
-    state.shapeOverrides[index] = (currentIndex + 1) % total;
-    renderProgression();
+    cycleShape(Number(button.getAttribute('data-cycle-shape')));
   });
 
   elements.progressionGrid.addEventListener('pointerdown', (event) => {
@@ -988,8 +1373,10 @@ async function init() {
   syncTempo(state.tempo);
   syncTransportMode();
   installAudioPrimer();
+  installGenerateButtonLayoutSync();
   installTooltipDismissal();
   installSelectionSuppression();
+  installDiagramZoomInteractions();
   attachLifecycleListeners();
   attachEventListeners();
   chordLibrary = await loadChordLibrary();
@@ -1002,6 +1389,7 @@ async function init() {
 }
 
 window.addEventListener('pageshow', () => {
+  syncGenerateButtonPlacement();
   syncRhythmControlsFromState();
   void restoreTransportAfterBackground();
 });

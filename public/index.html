@@ -149,7 +149,9 @@
               </div>
             </fieldset>
 
-            <button id="generate-button" class="generate-button key-generate-button" type="button">Generate</button>
+            <div id="key-generate-slot">
+              <button id="generate-button" class="generate-button key-generate-button" type="button">Generate</button>
+            </div>
           </section>
 
           <section class="control-block voicings-block" aria-label="Chord shape controls">
@@ -169,6 +171,8 @@
               <label><input type="checkbox" name="flavor-option" value="seventh" /> <span>Sevenths</span></label>
               <label><input type="checkbox" name="flavor-option" value="sus/add" /> <span>Suspended / add9</span></label>
             </fieldset>
+
+            <div id="voicings-generate-slot"></div>
           </section>
 
           <section class="control-block" aria-labelledby="rhythm-heading">
@@ -250,6 +254,38 @@
       <span class="footer-web-only" aria-hidden="true">&bull;</span>
       <a class="footer-privacy-link" href="./privacy/index.html">Privacy</a>
     </footer>
+  </div>
+
+  <div id="diagram-zoom-overlay" class="diagram-zoom-overlay" hidden>
+    <div
+      class="diagram-zoom-sheet"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="diagram-zoom-title"
+    >
+      <h2 id="diagram-zoom-title" class="sr-only">Chord detail carousel</h2>
+      <div class="diagram-zoom-dismiss-handle" aria-hidden="true">
+        <span aria-hidden="true"></span>
+      </div>
+      <button class="diagram-zoom-close" type="button" data-close-diagram-zoom aria-label="Close enlarged chord diagram">
+        <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+          <path d="M5.4 5.4 14.6 14.6M14.6 5.4 5.4 14.6"></path>
+        </svg>
+      </button>
+      <button class="diagram-zoom-nav diagram-zoom-nav-prev" type="button" data-zoom-nav="-1" aria-label="Previous chord">
+        <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+          <path d="M12.5 4.5 7 10l5.5 5.5"></path>
+        </svg>
+      </button>
+      <div class="diagram-zoom-viewport" id="diagram-zoom-viewport">
+        <div id="diagram-zoom-body" class="diagram-zoom-body"></div>
+      </div>
+      <button class="diagram-zoom-nav diagram-zoom-nav-next" type="button" data-zoom-nav="1" aria-label="Next chord">
+        <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+          <path d="M7.5 4.5 13 10l-5.5 5.5"></path>
+        </svg>
+      </button>
+    </div>
   </div>
 
   <noscript>

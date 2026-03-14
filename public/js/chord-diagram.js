@@ -36,11 +36,11 @@ export function buildDiagramModel(shape, { leftHanded = false } = {}) {
     const finger = shape.fingers[shapeIndex];
     const x = xForString(stringNumber, leftHanded);
     if (fret === -1) {
-      stringStates.push({ type: 'mute', x, symbol: '×', stringNumber });
+      stringStates.push({ type: 'mute', x, symbol: 'x', stringNumber });
       continue;
     }
     if (fret === 0) {
-      stringStates.push({ type: 'open', x, symbol: '○', stringNumber });
+      stringStates.push({ type: 'open', x, symbol: 'o', stringNumber });
       continue;
     }
 
@@ -107,7 +107,7 @@ export function renderChordDiagram(shape, options = {}) {
   }).join('');
 
   const stringStates = model.stringStates.map((state) => (
-    `<text x="${state.x}" y="20" class="diagram-state">${state.symbol}</text>`
+    `<text x="${state.x}" y="20" class="diagram-state diagram-state-${state.type}">${state.symbol}</text>`
   )).join('');
 
   const barres = model.barres.map((barre) => (

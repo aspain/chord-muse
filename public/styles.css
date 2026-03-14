@@ -55,6 +55,10 @@ body {
   -webkit-text-size-adjust: 100%;
 }
 
+body.diagram-zoom-open {
+  overflow: hidden;
+}
+
 body.is-native-app,
 body.is-native-app * {
   user-select: none;
@@ -174,6 +178,159 @@ select:focus-visible {
 
 .page-footer a {
   color: inherit;
+}
+
+.diagram-zoom-overlay {
+  --diagram-zoom-track-base: -33.333333%;
+  --diagram-zoom-translate-x: 0px;
+  --diagram-zoom-sheet-translate-y: 0px;
+  --diagram-zoom-backdrop-opacity: 1;
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding:
+    max(18px, calc(var(--safe-top) + 14px))
+    max(14px, calc(var(--safe-right) + 14px))
+    max(18px, calc(var(--safe-bottom) + 14px))
+    max(14px, calc(var(--safe-left) + 14px));
+  background: rgba(23, 16, 11, calc(0.5 * var(--diagram-zoom-backdrop-opacity)));
+  backdrop-filter: blur(calc(12px * var(--diagram-zoom-backdrop-opacity)));
+  overscroll-behavior: contain;
+}
+
+.diagram-zoom-overlay[hidden] {
+  display: none;
+}
+
+.diagram-zoom-sheet {
+  position: relative;
+  width: min(100%, 560px);
+  max-height: min(84svh, 760px);
+  padding: 14px 52px 20px;
+  border-radius: 28px;
+  border: 1px solid rgba(96, 61, 36, 0.16);
+  background:
+    radial-gradient(circle at top right, rgba(214, 179, 145, 0.22), transparent 34%),
+    linear-gradient(180deg, rgba(255, 252, 247, 0.98), rgba(244, 235, 223, 0.96));
+  box-shadow:
+    0 26px 60px rgba(23, 16, 11, 0.22),
+    0 0 0 1px rgba(255, 255, 255, 0.55) inset;
+  overflow: hidden;
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  transform: translateY(var(--diagram-zoom-sheet-translate-y));
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  touch-action: none;
+}
+
+.diagram-zoom-sheet.gesture-active {
+  transition: none;
+}
+
+.diagram-zoom-dismiss-handle {
+  display: flex;
+  justify-content: center;
+  padding: 2px 0 10px;
+  width: 100%;
+}
+
+.diagram-zoom-dismiss-handle span {
+  width: 54px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(96, 61, 36, 0.2);
+}
+
+.diagram-zoom-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(96, 61, 36, 0.14);
+  background: rgba(255, 251, 246, 0.92);
+  color: var(--accent-deep);
+  box-shadow: 0 10px 22px rgba(70, 42, 24, 0.12);
+}
+
+.diagram-zoom-close svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 2;
+}
+
+.diagram-zoom-nav {
+  position: absolute;
+  top: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(96, 61, 36, 0.14);
+  background: rgba(255, 251, 246, 0.94);
+  color: var(--accent-deep);
+  box-shadow: 0 10px 22px rgba(70, 42, 24, 0.12);
+  transform: translateY(-50%);
+}
+
+.diagram-zoom-nav-prev {
+  left: 8px;
+}
+
+.diagram-zoom-nav-next {
+  right: 8px;
+}
+
+.diagram-zoom-nav svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.diagram-zoom-viewport {
+  width: 100%;
+  overflow: hidden;
+  display: grid;
+  justify-items: center;
+  padding: 10px 8px 12px;
+  touch-action: none;
+}
+
+.diagram-zoom-body {
+  display: flex;
+  width: 300%;
+  padding: 0;
+  transform: translateX(calc(var(--diagram-zoom-track-base) + var(--diagram-zoom-translate-x)));
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.diagram-zoom-body.gesture-active {
+  transition: none;
+}
+
+.diagram-zoom-slide {
+  flex: 0 0 33.333333%;
+  display: grid;
+  justify-items: center;
+  padding: 4px;
 }
 
 .is-native-app .page-footer {
@@ -445,6 +602,11 @@ select:focus-visible {
 
 .mode-inline-field {
   width: 100%;
+}
+
+#key-generate-slot,
+#voicings-generate-slot {
+  display: contents;
 }
 
 .key-generate-button {
@@ -957,6 +1119,73 @@ input[type='radio'] {
   padding: 0;
 }
 
+.diagram-frame {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-width: 0;
+}
+
+.diagram-zoom-button {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(96, 61, 36, 0.14);
+  background: rgba(255, 251, 246, 0.92);
+  color: var(--accent-deep);
+  box-shadow: 0 8px 18px rgba(70, 42, 24, 0.14);
+  transform: translateY(-50%);
+}
+
+.diagram-zoom-button:hover,
+.diagram-zoom-button:focus-visible,
+.diagram-zoom-nav:hover,
+.diagram-zoom-nav:focus-visible,
+.diagram-zoom-close:hover,
+.diagram-zoom-close:focus-visible {
+  background: rgba(255, 247, 239, 0.98);
+}
+
+.diagram-zoom-button svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.85;
+}
+
+.diagram-zoom-card {
+  width: min(100%, 430px);
+  max-width: 430px;
+  min-height: 0;
+  padding: 14px 14px 16px;
+  gap: 8px;
+  --card-stage-width: min(calc(100% - 24px), 340px);
+  --diagram-top-pull: 8px;
+  --card-action-reorder-clearance: 0px;
+}
+
+.diagram-zoom-card.playing {
+  box-shadow:
+    0 0 0 3px rgba(180, 110, 48, 0.2),
+    0 18px 38px rgba(126, 66, 22, 0.18);
+}
+
+.diagram-zoom-card .chord-diagram {
+  width: min(100%, 228px);
+  transform: translateX(-9px);
+}
+
 .empty-state-visual {
   position: relative;
   display: grid;
@@ -1048,6 +1277,15 @@ input[type='radio'] {
 .diagram-state {
   font-size: 11px;
   font-weight: 700;
+}
+
+.diagram-state-open,
+.diagram-state-mute {
+  font-size: 12px;
+}
+
+.diagram-state-mute {
+  font-weight: 800;
 }
 
 .diagram-finger {
@@ -1193,6 +1431,20 @@ input[type='radio'] {
 }
 
 @media (min-width: 1041px) {
+  .diagram-zoom-sheet {
+    width: min(100%, 620px);
+  }
+
+  .diagram-zoom-card {
+    max-width: 470px;
+    --card-stage-width: min(calc(100% - 28px), 384px);
+  }
+
+  .diagram-zoom-card .chord-diagram {
+    width: min(100%, 252px);
+    transform: translateX(-10px);
+  }
+
   .page-shell {
     max-width: 1800px;
   }
@@ -1753,6 +2005,50 @@ input[type='range'] {
     width: min(100%, 112px);
   }
 
+  .diagram-zoom-button {
+    right: 4px;
+  }
+
+  .diagram-zoom-overlay {
+    padding:
+      max(12px, calc(var(--safe-top) + 10px))
+      max(10px, calc(var(--safe-right) + 10px))
+      max(12px, calc(var(--safe-bottom) + 10px))
+      max(10px, calc(var(--safe-left) + 10px));
+  }
+
+  .diagram-zoom-sheet {
+    width: min(100%, 460px);
+    padding: 10px 40px 16px;
+    border-radius: 24px;
+  }
+
+  .diagram-zoom-nav {
+    width: 36px;
+    height: 36px;
+  }
+
+  .diagram-zoom-nav-prev {
+    left: 6px;
+  }
+
+  .diagram-zoom-nav-next {
+    right: 6px;
+  }
+
+  .diagram-zoom-card {
+    width: min(100%, 360px);
+    padding: 10px 10px 14px;
+    gap: 6px;
+    --card-stage-width: min(calc(100% - 14px), 286px);
+    --diagram-top-pull: 6px;
+  }
+
+  .diagram-zoom-card .chord-diagram {
+    width: min(100%, 196px);
+    transform: translateX(-8px);
+  }
+
   .diagram-basefret {
     font-size: 12px;
   }
@@ -1945,6 +2241,11 @@ input[type='range'] {
     height: 28px;
   }
 
+  .diagram-zoom-button {
+    width: 28px;
+    height: 28px;
+  }
+
   .drag-placeholder::after {
     font-size: 10px;
   }
@@ -2089,6 +2390,32 @@ input[type='range'] {
     font-size: 11px;
   }
 
+  .diagram-zoom-sheet {
+    width: min(100%, 360px);
+    border-radius: 22px;
+    padding-inline: 34px;
+  }
+
+  .diagram-zoom-close {
+    width: 34px;
+    height: 34px;
+  }
+
+  .diagram-zoom-nav {
+    width: 34px;
+    height: 34px;
+  }
+
+  .diagram-zoom-card {
+    width: min(100%, 318px);
+    --card-stage-width: min(calc(100% - 12px), 252px);
+  }
+
+  .diagram-zoom-card .chord-diagram {
+    width: min(100%, 176px);
+    transform: translateX(-7px);
+  }
+
   .key-generate-button {
     min-height: 32px;
   }
@@ -2155,6 +2482,11 @@ input[type='range'] {
   }
 
   .reorder-handle {
+    width: 27px;
+    height: 27px;
+  }
+
+  .diagram-zoom-button {
     width: 27px;
     height: 27px;
   }
@@ -2365,6 +2697,11 @@ input[type='range'] {
     height: 26px;
   }
 
+  .diagram-zoom-button {
+    width: 26px;
+    height: 26px;
+  }
+
   .page-footer {
     padding: 2px 6px 6px;
     font-size: 11px;
@@ -2457,6 +2794,11 @@ input[type='range'] {
   .reorder-handle {
     right: 7px;
     bottom: 7px;
+    width: 24px;
+    height: 24px;
+  }
+
+  .diagram-zoom-button {
     width: 24px;
     height: 24px;
   }
@@ -2628,6 +2970,11 @@ input[type='range'] {
   .reorder-handle {
     right: 8px;
     bottom: 8px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .diagram-zoom-button {
     width: 28px;
     height: 28px;
   }
@@ -2813,6 +3160,11 @@ input[type='range'] {
   .reorder-handle {
     right: 7px;
     bottom: 7px;
+    width: 26px;
+    height: 26px;
+  }
+
+  .diagram-zoom-button {
     width: 26px;
     height: 26px;
   }
