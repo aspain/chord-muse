@@ -623,6 +623,10 @@ select:focus-visible {
   padding-top: 10px;
 }
 
+.control-actions-slot[hidden] {
+  display: none;
+}
+
 .control-actions-slot:empty {
   display: none;
 }
@@ -2948,6 +2952,10 @@ input[type='range'] {
 }
 
 @media (max-width: 780px) {
+  .control-deck {
+    padding-bottom: 3px;
+  }
+
   .control-grid {
     grid-template-columns: 1fr;
   }

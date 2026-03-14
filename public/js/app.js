@@ -69,6 +69,9 @@ const compactActionControlsQuery = typeof window.matchMedia === 'function'
 const narrowActionControlsQuery = typeof window.matchMedia === 'function'
   ? window.matchMedia('(max-width: 620px)')
   : null;
+const touchInputQuery = typeof window.matchMedia === 'function'
+  ? window.matchMedia('(hover: none), (pointer: coarse)')
+  : null;
 const audioEngine = new AudioEngine(({ beatIndex, chordIndex }) => {
   renderBeatPulse(beatIndex);
   setActiveChord(chordIndex);
@@ -82,6 +85,17 @@ function applyPlatformClassNames() {
   const nativeShell = isNativeShell();
   document.documentElement.classList.toggle('is-native-app', nativeShell);
   document.body.classList.toggle('is-native-app', nativeShell);
+}
+
+function blurSelectAfterCommit(select) {
+  if (!(select instanceof HTMLSelectElement)) return;
+  if (!isNativeShell() && !touchInputQuery?.matches) return;
+
+  window.setTimeout(() => {
+    if (document.activeElement === select) {
+      select.blur();
+    }
+  }, 0);
 }
 
 async function primeAudio() {
@@ -145,13 +159,27 @@ function getProgressionHeaderActionsSlot() {
   return elements.progressionKeyDisplay?.querySelector('[data-progression-header-actions]');
 }
 
+function syncPrimaryActionSlotVisibility() {
+  if (elements.controlActionsSlot) {
+    elements.controlActionsSlot.hidden = !elements.controlActionsSlot.contains(elements.actionControls);
+  }
+}
+
 function syncPrimaryActionControlsPlacement() {
   const headerActionsSlot = getProgressionHeaderActionsSlot();
   const targetSlot = compactActionControlsQuery?.matches && headerActionsSlot
     ? headerActionsSlot
     : elements.controlActionsSlot;
-  if (!targetSlot || elements.actionControls.parentElement === targetSlot) return;
-  targetSlot.append(elements.actionControls);
+  if (!targetSlot) {
+    syncPrimaryActionSlotVisibility();
+    return;
+  }
+
+  if (elements.actionControls.parentElement !== targetSlot) {
+    targetSlot.append(elements.actionControls);
+  }
+
+  syncPrimaryActionSlotVisibility();
 }
 
 function installActionControlsLayoutSync() {
@@ -1295,6 +1323,7 @@ function attachEventListeners() {
       ? null
       : Number(elements.keyRootSelect.value);
     refreshProgression('preserve');
+    blurSelectAfterCommit(elements.keyRootSelect);
   });
 
   document.querySelectorAll('input[name="mode-preference"]').forEach((node) => {
@@ -1413,11 +1442,13 @@ function attachEventListeners() {
   elements.meterSelect.addEventListener('change', () => {
     state.meter = elements.meterSelect.value;
     renderGrooveOptions();
+    blurSelectAfterCommit(elements.meterSelect);
   });
 
   elements.grooveSelect.addEventListener('change', () => {
     state.groove = elements.grooveSelect.value;
     renderGrooveOptions();
+    blurSelectAfterCommit(elements.grooveSelect);
   });
 
   document.addEventListener('click', async (event) => {
