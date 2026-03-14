@@ -183,14 +183,22 @@
               </div>
               <div class="action-cluster rhythm-actions">
                 <label class="transport-toggle">
-                  <input id="play-drums-toggle" type="checkbox" checked />
+                  <input id="play-drums-toggle" type="checkbox" data-transport-toggle="drums" checked />
                   <span>Drums</span>
                 </label>
                 <label class="transport-toggle">
-                  <input id="play-chords-toggle" type="checkbox" />
+                  <input id="play-chords-toggle" type="checkbox" data-transport-toggle="chords" />
                   <span>Chords</span>
                 </label>
-                <button id="transport-button" class="transport-button" type="button" aria-pressed="false">Play</button>
+                <button
+                  id="transport-button"
+                  class="transport-button"
+                  type="button"
+                  data-transport-button
+                  aria-pressed="false"
+                >
+                  Play
+                </button>
               </div>
             </div>
 

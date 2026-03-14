@@ -1,6 +1,7 @@
 import { AudioEngine, GROOVES } from './audio-engine.js';
 import { loadChordLibrary, selectShapeSequence } from './chord-library.js';
 import { renderChordDiagram } from './chord-diagram.js';
+import { getDiagramZoomStartIndex } from './diagram-zoom.js';
 import { getKeyTonicName, listPitchClasses } from './music-theory.js';
 import { moveIndex, moveIndexedValues, moveItem } from './reorder-utils.js';
 import { parseCommittedTempo, parseTempoDraft } from './tempo-utils.js';
@@ -262,7 +263,7 @@ function syncDiagramZoom({ focusCloseButton = false } = {}) {
   elements.diagramZoomOverlay.hidden = false;
   document.body.classList.add('diagram-zoom-open');
   setDiagramZoomOffsets();
-  setActiveChord(state.activeChordIndex);
+  setActiveChord(state.activeChordIndex, { syncZoom: false });
 
   if (focusCloseButton) {
     window.requestAnimationFrame(() => {
@@ -292,10 +293,14 @@ function closeDiagramZoom({ restoreFocus = true } = {}) {
 }
 
 function openDiagramZoom(index, trigger) {
-  if (!Number.isInteger(index) || index < 0) return;
+  const startIndex = getDiagramZoomStartIndex(index, {
+    playChords: state.playChords,
+    isPlaying: audioEngine.isPlaying,
+    activeChordIndex: state.activeChordIndex
+  });
+  if (startIndex === null) return;
 
-  const shouldFollowActiveChord = state.playChords && audioEngine.isPlaying && state.activeChordIndex >= 0;
-  state.zoomedChordIndex = shouldFollowActiveChord ? state.activeChordIndex : index;
+  state.zoomedChordIndex = startIndex;
   diagramZoomTrigger = trigger instanceof HTMLElement ? trigger : null;
   syncDiagramZoom({ focusCloseButton: true });
 }
@@ -473,10 +478,17 @@ function attachLifecycleListeners() {
 
 function syncTransportMode() {
   audioEngine.setTransportMode({ drums: state.playDrums, chords: state.playChords });
-  elements.playDrumsToggle.checked = state.playDrums;
-  elements.playChordsToggle.checked = state.playChords;
-  elements.transportButton.disabled = !state.playDrums && !state.playChords;
+  document.querySelectorAll('[data-transport-toggle="drums"]').forEach((toggle) => {
+    toggle.checked = state.playDrums;
+  });
+  document.querySelectorAll('[data-transport-toggle="chords"]').forEach((toggle) => {
+    toggle.checked = state.playChords;
+  });
+  document.querySelectorAll('[data-transport-button]').forEach((button) => {
+    button.disabled = !state.playDrums && !state.playChords;
+  });
   if (!state.playChords) setActiveChord(-1);
+  syncProgressionHeaderActionsLayout();
 }
 
 function getSelectedShapes() {
@@ -542,6 +554,36 @@ function syncRhythmControlsFromState() {
   renderGrooveOptions();
 }
 
+function syncProgressionHeaderActionsLayout() {
+  const header = elements.progressionKeyDisplay?.querySelector('.progression-key-header');
+  const title = header?.querySelector('.progression-key-title');
+  const actions = header?.querySelector('.progression-header-actions');
+  if (!(header instanceof HTMLElement) || !(title instanceof HTMLElement) || !(actions instanceof HTMLElement)) {
+    return;
+  }
+
+  if (window.getComputedStyle(actions).display === 'none') {
+    header.style.removeProperty('--progression-header-actions-left');
+    header.style.removeProperty('--progression-header-title-max');
+    return;
+  }
+
+  const headerWidth = header.clientWidth;
+  const actionsWidth = actions.offsetWidth;
+  if (!headerWidth || !actionsWidth) return;
+
+  const gap = 10;
+  const centeredLeft = Math.max(0, (headerWidth - actionsWidth) / 2);
+  const maxLeft = Math.max(0, headerWidth - actionsWidth);
+  const titleWidth = title.scrollWidth;
+  const shiftedLeft = Math.max(centeredLeft, titleWidth + gap);
+  const actionsLeft = Math.min(shiftedLeft, maxLeft);
+  const titleMax = Math.max(0, actionsLeft - gap);
+
+  header.style.setProperty('--progression-header-actions-left', `${actionsLeft}px`);
+  header.style.setProperty('--progression-header-title-max', `${titleMax}px`);
+}
+
 function renderBeatPulse(activeBeat) {
   const groove = GROOVES.find((item) => item.id === state.groove);
   elements.beatCounterLabel.textContent = activeBeat >= 0 ? `Beat ${activeBeat + 1} of ${groove.beatsPerBar}` : '';
@@ -564,6 +606,34 @@ function formatSwapShapeLabel(selectedIndex, totalCandidates, preferredIndex = 0
   if (totalCandidates < 2) return 'Only shape';
   const counter = `${getSwapShapeCyclePosition(selectedIndex, preferredIndex, totalCandidates)}/${totalCandidates}`;
   return useCompactSwapShapeLabel() ? `Swap (${counter})` : `Swap shape (${counter})`;
+}
+
+function renderTransportControlsMarkup({ className = '', wrap = true } = {}) {
+  const controlsMarkup = `
+    <label class="transport-toggle">
+      <input type="checkbox" data-transport-toggle="drums" ${state.playDrums ? 'checked' : ''} />
+      <span>Drums</span>
+    </label>
+    <label class="transport-toggle">
+      <input type="checkbox" data-transport-toggle="chords" ${state.playChords ? 'checked' : ''} />
+      <span>Chords</span>
+    </label>
+    <button
+      class="transport-button"
+      type="button"
+      data-transport-button
+      aria-pressed="${audioEngine.isPlaying ? 'true' : 'false'}"
+      ${!state.playDrums && !state.playChords ? 'disabled' : ''}
+    >
+      ${audioEngine.isPlaying ? 'Stop' : 'Play'}
+    </button>
+  `;
+
+  if (!wrap) return controlsMarkup;
+
+  const classes = ['action-cluster', 'rhythm-actions'];
+  if (className) classes.push(className);
+  return `<div class="${classes.join(' ')}">${controlsMarkup}</div>`;
 }
 
 function renderChordCardMarkup(
@@ -662,7 +732,7 @@ function cycleShape(index) {
   renderProgression();
 }
 
-function setActiveChord(index) {
+function setActiveChord(index, { syncZoom = true } = {}) {
   state.activeChordIndex = Number.isInteger(index) ? index : -1;
   [elements.progressionGrid, elements.diagramZoomBody].forEach((root) => {
     root?.querySelectorAll('[data-chord-card]').forEach((card) => {
@@ -672,7 +742,8 @@ function setActiveChord(index) {
   });
 
   if (
-    state.zoomedChordIndex !== null
+    syncZoom
+    && state.zoomedChordIndex !== null
     && state.playChords
     && audioEngine.isPlaying
     && state.activeChordIndex >= 0
@@ -706,8 +777,11 @@ function updateWarning(message) {
 }
 
 function updateTransportButton(isPlaying) {
-  elements.transportButton.textContent = isPlaying ? 'Stop' : 'Play';
-  elements.transportButton.setAttribute('aria-pressed', String(isPlaying));
+  document.querySelectorAll('[data-transport-button]').forEach((button) => {
+    button.textContent = isPlaying ? 'Stop' : 'Play';
+    button.setAttribute('aria-pressed', String(isPlaying));
+  });
+  syncProgressionHeaderActionsLayout();
 }
 
 function ensureReorderStatusRegion() {
@@ -1116,13 +1190,16 @@ function renderProgression() {
   elements.progressionKeyDisplay.innerHTML = `
     <div class="progression-key-header">
       <strong class="progression-key-title">${formatKeyLabel(state.progression.keyRoot, state.progression.mode)}</strong>
-      <button
-        class="generate-button progression-generate-button"
-        type="button"
-        data-generate-button="progression-header"
-      >
-        Generate
-      </button>
+      <div class="progression-header-actions">
+        <button
+          class="generate-button progression-generate-button"
+          type="button"
+          data-generate-button="progression-header"
+        >
+          Generate
+        </button>
+        ${renderTransportControlsMarkup({ wrap: false })}
+      </div>
     </div>
   `;
   elements.progressionGrid.innerHTML = state.progression.chords.map((chord, index) => {
@@ -1135,10 +1212,13 @@ function renderProgression() {
     });
   }).join('');
 
-  setActiveChord(state.activeChordIndex);
+  setActiveChord(state.activeChordIndex, { syncZoom: false });
   syncDiagramZoom();
+  syncTransportMode();
+  updateTransportButton(audioEngine.isPlaying);
   updateStatusLine();
   focusPendingHandle();
+  window.requestAnimationFrame(() => syncProgressionHeaderActionsLayout());
 }
 
 function regenerateProgression() {
@@ -1326,17 +1406,21 @@ function attachEventListeners() {
     });
   });
 
-  elements.playDrumsToggle.addEventListener('change', () => {
-    state.playDrums = elements.playDrumsToggle.checked;
-    syncTransportMode();
-    if (!state.playDrums && !state.playChords && audioEngine.isPlaying) {
-      audioEngine.stop();
-      updateTransportButton(false);
-    }
-  });
+  document.addEventListener('change', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement)) return;
 
-  elements.playChordsToggle.addEventListener('change', () => {
-    state.playChords = elements.playChordsToggle.checked;
+    const transportMode = target.getAttribute('data-transport-toggle');
+    if (!transportMode) return;
+
+    if (transportMode === 'drums') {
+      state.playDrums = target.checked;
+    } else if (transportMode === 'chords') {
+      state.playChords = target.checked;
+    } else {
+      return;
+    }
+
     syncTransportMode();
     if (!state.playDrums && !state.playChords && audioEngine.isPlaying) {
       audioEngine.stop();
@@ -1359,7 +1443,13 @@ function attachEventListeners() {
     renderGrooveOptions();
   });
 
-  elements.transportButton.addEventListener('click', async () => {
+  document.addEventListener('click', async (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+
+    const transportButton = target.closest('[data-transport-button]');
+    if (!transportButton) return;
+
     const isPlaying = await audioEngine.toggle();
     updateTransportButton(isPlaying);
   });
@@ -1386,11 +1476,13 @@ async function init() {
   // Some browsers restore prior form control values after module init.
   window.requestAnimationFrame(() => syncRhythmControlsFromState());
   window.setTimeout(() => syncRhythmControlsFromState(), 0);
+  window.addEventListener('resize', syncProgressionHeaderActionsLayout);
 }
 
 window.addEventListener('pageshow', () => {
   syncGenerateButtonPlacement();
   syncRhythmControlsFromState();
+  syncProgressionHeaderActionsLayout();
   void restoreTransportAfterBackground();
 });
 
