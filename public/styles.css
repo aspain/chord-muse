@@ -454,6 +454,14 @@ select:focus-visible {
   transition: none;
 }
 
+.generate-button {
+  min-width: 112px;
+}
+
+.transport-button {
+  min-width: 100px;
+}
+
 .transport-button {
   display: inline-flex;
   align-items: center;
@@ -497,6 +505,10 @@ select:focus-visible {
   justify-content: end;
   gap: 10px;
   flex-wrap: nowrap;
+}
+
+.primary-action-controls {
+  justify-content: center;
 }
 
 .status-strip {
@@ -605,16 +617,20 @@ select:focus-visible {
   width: 100%;
 }
 
-#key-generate-slot,
-#voicings-generate-slot {
-  display: contents;
+.control-actions-slot {
+  display: flex;
+  justify-content: center;
+  padding-top: 10px;
 }
 
-.key-generate-button {
-  width: 100%;
-  justify-self: stretch;
-  min-height: 42px;
-  white-space: nowrap;
+.control-actions-slot:empty {
+  display: none;
+}
+
+.control-actions-slot .primary-action-controls {
+  width: auto;
+  max-width: 100%;
+  flex-wrap: wrap;
 }
 
 .field,
@@ -913,25 +929,16 @@ input[type='radio'] {
   max-width: 100%;
   font-family: var(--serif-stack);
   font-size: clamp(28px, 2.1vw, 36px);
-  line-height: 0.94;
+  line-height: 1.02;
+  padding-bottom: 0.08em;
   color: var(--ink);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.progression-generate-button {
-  display: none;
-  white-space: nowrap;
-}
-
 .progression-header-actions {
   display: none;
-}
-
-.progression-header-actions,
-.progression-transport-actions {
-  --progression-header-action-gap: 6px;
 }
 
 .progression-header-actions .generate-button,
@@ -942,12 +949,16 @@ input[type='radio'] {
   font-size: 11px;
 }
 
-.progression-header-actions .transport-toggle {
-  gap: 4px;
+.progression-header-actions .generate-button {
+  min-width: 88px;
 }
 
-.progression-transport-actions {
-  gap: var(--progression-header-action-gap);
+.progression-header-actions .transport-button {
+  min-width: 76px;
+}
+
+.progression-header-actions .transport-toggle {
+  gap: 4px;
 }
 
 .progression-grid {
@@ -1049,6 +1060,11 @@ input[type='radio'] {
   width: 100%;
   min-height: calc(var(--card-chip-row-height) + var(--card-title-row-height) + var(--card-header-gap));
   padding: 1px 1px 0;
+}
+
+.chord-card:not(.empty-state-card) .card-header {
+  width: min(100%, var(--card-stage-width));
+  margin-inline: auto;
 }
 
 .card-chip-row,
@@ -1270,6 +1286,10 @@ input[type='radio'] {
   overflow: visible;
 }
 
+.chord-card:not(.diagram-zoom-card) .chord-diagram {
+  transform: translateX(-4px);
+}
+
 .diagram-string,
 .diagram-fret,
 .diagram-nut,
@@ -1487,6 +1507,11 @@ input[type='radio'] {
     max-width: 1800px;
   }
 
+  .key-block {
+    grid-template-rows: auto minmax(0, 1fr);
+    align-content: stretch;
+  }
+
   .key-block .field-label-row,
   .key-block .key-diagram-field > .field-label {
     transform: translateY(-12px);
@@ -1497,7 +1522,8 @@ input[type='radio'] {
   }
 
   .key-block .mode-inline-field {
-    padding-top: 8px;
+    align-self: end;
+    padding-top: 18px;
   }
 
   .key-block .mode-inline-field legend {
@@ -1505,8 +1531,13 @@ input[type='radio'] {
     margin-bottom: 4px;
   }
 
-  .key-block .key-generate-button {
-    margin-top: 12px;
+  .tempo-block {
+    grid-template-rows: auto auto auto minmax(0, 1fr);
+    align-content: stretch;
+  }
+
+  .tempo-block .beat-box {
+    align-self: end;
   }
 
   .progression-body {
@@ -1594,7 +1625,7 @@ input[type='radio'] {
 
   .progression-key-title {
     font-size: 20px;
-    line-height: 0.98;
+    line-height: 1.04;
   }
 
   .progression-grid {
@@ -1753,13 +1784,8 @@ input[type='range'] {
     gap: 6px;
   }
 
-  .control-block[aria-labelledby='rhythm-heading'] .control-block-header-split {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 6px;
-  }
-
-  .control-block[aria-labelledby='rhythm-heading'] .rhythm-actions {
-    justify-content: flex-start;
+  .control-actions-slot {
+    padding-top: 8px;
   }
 
   .progression-body {
@@ -1784,13 +1810,8 @@ input[type='range'] {
 }
 
 @media (orientation: landscape) and (min-width: 1041px) and (max-width: 1400px) and (max-height: 1100px) {
-  .control-block[aria-labelledby='rhythm-heading'] .control-block-header-split {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 6px;
-  }
-
-  .control-block[aria-labelledby='rhythm-heading'] .rhythm-actions {
-    justify-content: flex-start;
+  .control-actions-slot {
+    padding-top: 8px;
   }
 
   .page-shell {
@@ -1951,10 +1972,6 @@ input[type='range'] {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .key-generate-button {
-    min-height: 36px;
-  }
-
   .tempo-box {
     gap: 5px;
   }
@@ -2009,15 +2026,18 @@ input[type='range'] {
   }
 
   .progression-header-actions {
-    display: inline-flex;
     position: absolute;
     top: 50%;
     left: 0;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    gap: var(--progression-header-action-gap);
     transform: translate3d(var(--progression-header-actions-left, 0px), -50%, 0);
+  }
+
+  .progression-header-actions:not(:empty) {
+    display: inline-flex;
+  }
+
+  .progression-header-actions .primary-action-controls {
+    justify-content: center;
   }
 
   .progression-header-actions .generate-button,
@@ -2028,20 +2048,16 @@ input[type='range'] {
     font-size: 10px;
   }
 
+  .progression-header-actions .generate-button {
+    min-width: 82px;
+  }
+
+  .progression-header-actions .transport-button {
+    min-width: 70px;
+  }
+
   .progression-header-actions .transport-toggle {
     gap: 3px;
-  }
-
-  .progression-generate-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 0;
-  }
-
-  .progression-transport-actions {
-    flex-wrap: nowrap;
-    justify-content: flex-end;
   }
 
   .progression-grid {
@@ -2238,16 +2254,13 @@ input[type='range'] {
   }
 
   .key-block .mode-inline-field {
-    padding-top: 4px;
+    align-self: end;
+    padding-top: 14px;
   }
 
   .key-block .mode-inline-field legend {
     padding-block: 2px;
     margin-bottom: 4px;
-  }
-
-  .key-block .key-generate-button {
-    margin-top: 12px;
   }
 
   .key-row {
@@ -2483,10 +2496,6 @@ input[type='range'] {
   .diagram-zoom-card .chord-diagram {
     width: min(100%, 176px);
     transform: translateX(-7px);
-  }
-
-  .key-generate-button {
-    min-height: 32px;
   }
 
   .control-grid .panel-kicker,
@@ -2950,6 +2959,14 @@ input[type='range'] {
     font-size: 10px;
   }
 
+  .generate-button {
+    min-width: 96px;
+  }
+
+  .transport-button {
+    min-width: 88px;
+  }
+
   .progression-header-actions .generate-button,
   .progression-header-actions .transport-toggle,
   .progression-header-actions .transport-button {
@@ -2958,12 +2975,16 @@ input[type='range'] {
     font-size: 9px;
   }
 
-  .progression-header-actions .transport-toggle {
-    gap: 2px;
+  .progression-header-actions .generate-button {
+    min-width: 76px;
   }
 
-  .key-generate-button {
-    font-size: 11px;
+  .progression-header-actions .transport-button {
+    min-width: 62px;
+  }
+
+  .progression-header-actions .transport-toggle {
+    gap: 2px;
   }
 
   .transport-toggle {
@@ -3094,11 +3115,11 @@ input[type='range'] {
 
   .voicings-block,
   .key-block,
-  .control-block[aria-labelledby='rhythm-heading'] {
+  .tempo-block {
     gap: 3px;
   }
 
-  .control-block[aria-labelledby='rhythm-heading'] > .field:first-of-type {
+  .tempo-block > .field:first-of-type {
     gap: 2px;
   }
 
@@ -3172,11 +3193,11 @@ input[type='range'] {
 
   .voicings-block,
   .key-block,
-  .control-block[aria-labelledby='rhythm-heading'] {
+  .tempo-block {
     gap: 2px;
   }
 
-  .control-block[aria-labelledby='rhythm-heading'] > .field:first-of-type {
+  .tempo-block > .field:first-of-type {
     gap: 1px;
   }
 

@@ -112,7 +112,7 @@
         </div>
 
         <div class="control-grid">
-          <section class="control-block key-block" aria-label="Key and generation controls">
+          <section class="control-block key-block" aria-label="Key controls">
             <div class="key-row">
               <div class="field key-root-field">
                 <div class="field-label-row">
@@ -148,10 +148,6 @@
                 <label><input type="radio" name="mode-preference" value="minor" /> <span>Minor</span></label>
               </div>
             </fieldset>
-
-            <div id="key-generate-slot">
-              <button id="generate-button" class="generate-button key-generate-button" type="button">Generate</button>
-            </div>
           </section>
 
           <section class="control-block voicings-block" aria-label="Chord shape controls">
@@ -172,38 +168,15 @@
               <label><input type="checkbox" name="flavor-option" value="sus/add" /> <span>Suspended / add9</span></label>
             </fieldset>
 
-            <div id="voicings-generate-slot"></div>
           </section>
 
-          <section class="control-block" aria-labelledby="rhythm-heading">
-            <div class="control-block-header control-block-header-split">
-              <div>
-                <p class="panel-kicker">Rhythm</p>
-                <h3 id="rhythm-heading" class="sr-only">Pocket</h3>
-              </div>
-              <div class="action-cluster rhythm-actions">
-                <label class="transport-toggle">
-                  <input id="play-drums-toggle" type="checkbox" data-transport-toggle="drums" checked />
-                  <span>Drums</span>
-                </label>
-                <label class="transport-toggle">
-                  <input id="play-chords-toggle" type="checkbox" data-transport-toggle="chords" />
-                  <span>Chords</span>
-                </label>
-                <button
-                  id="transport-button"
-                  class="transport-button"
-                  type="button"
-                  data-transport-button
-                  aria-pressed="false"
-                >
-                  Play
-                </button>
-              </div>
+          <section class="control-block tempo-block" aria-labelledby="tempo-heading">
+            <div class="control-block-header aligned-control-header">
+              <p class="panel-kicker">Tempo</p>
+              <h3 id="tempo-heading" class="sr-only">Tempo controls</h3>
             </div>
 
             <label class="field">
-              <span class="field-label">Tempo</span>
               <div class="tempo-inputs">
                 <input id="tempo-slider" type="range" min="50" max="180" value="92" />
                 <label class="tempo-box">
@@ -239,6 +212,34 @@
               </div>
             </div>
           </section>
+        </div>
+
+        <div class="control-actions-slot" id="control-actions-slot">
+          <div
+            id="primary-action-controls"
+            class="action-cluster rhythm-actions primary-action-controls"
+            role="group"
+            aria-label="Generation and playback controls"
+          >
+            <button id="generate-button" class="generate-button" type="button">Generate</button>
+            <label class="transport-toggle">
+              <input id="play-drums-toggle" type="checkbox" data-transport-toggle="drums" checked />
+              <span>Drums</span>
+            </label>
+            <label class="transport-toggle">
+              <input id="play-chords-toggle" type="checkbox" data-transport-toggle="chords" />
+              <span>Chords</span>
+            </label>
+            <button
+              id="transport-button"
+              class="transport-button"
+              type="button"
+              data-transport-button
+              aria-pressed="false"
+            >
+              Play
+            </button>
+          </div>
         </div>
 
       </section>

@@ -38,8 +38,8 @@ const elements = {
   beatCounterLabel: document.getElementById('beat-counter-label'),
   keyRootSelect: document.getElementById('key-root-select'),
   leftHandedToggle: document.getElementById('left-handed-toggle'),
-  keyGenerateSlot: document.getElementById('key-generate-slot'),
-  voicingsGenerateSlot: document.getElementById('voicings-generate-slot'),
+  controlActionsSlot: document.getElementById('control-actions-slot'),
+  actionControls: document.getElementById('primary-action-controls'),
   generateButton: document.getElementById('generate-button'),
   progressionKeyDisplay: document.getElementById('progression-key-display'),
   progressionGrid: document.getElementById('progression-grid'),
@@ -49,9 +49,6 @@ const elements = {
   diagramZoomViewport: document.getElementById('diagram-zoom-viewport'),
   diagramZoomBody: document.getElementById('diagram-zoom-body'),
   diagramZoomCloseButton: document.querySelector('.diagram-zoom-close'),
-  playDrumsToggle: document.getElementById('play-drums-toggle'),
-  playChordsToggle: document.getElementById('play-chords-toggle'),
-  transportButton: document.getElementById('transport-button'),
   tempoSlider: document.getElementById('tempo-slider'),
   tempoNumber: document.getElementById('tempo-number'),
   meterSelect: document.getElementById('meter-select'),
@@ -66,8 +63,11 @@ let dragSession = null;
 let diagramZoomTrigger = null;
 let diagramZoomGestureSession = null;
 let diagramZoomStepTimer = null;
-const stackedControlsQuery = typeof window.matchMedia === 'function'
-  ? window.matchMedia('(max-width: 780px), (orientation: portrait) and (min-width: 700px) and (max-width: 1100px)')
+const compactActionControlsQuery = typeof window.matchMedia === 'function'
+  ? window.matchMedia('(max-width: 1040px)')
+  : null;
+const narrowActionControlsQuery = typeof window.matchMedia === 'function'
+  ? window.matchMedia('(max-width: 620px)')
   : null;
 const audioEngine = new AudioEngine(({ beatIndex, chordIndex }) => {
   renderBeatPulse(beatIndex);
@@ -141,26 +141,34 @@ function installSelectionSuppression() {
   document.addEventListener('dragstart', blockSelection);
 }
 
-function syncGenerateButtonPlacement() {
-  const targetSlot = stackedControlsQuery?.matches
-    ? elements.voicingsGenerateSlot
-    : elements.keyGenerateSlot;
-  if (!targetSlot || elements.generateButton.parentElement === targetSlot) return;
-  targetSlot.append(elements.generateButton);
+function getProgressionHeaderActionsSlot() {
+  return elements.progressionKeyDisplay?.querySelector('[data-progression-header-actions]');
 }
 
-function installGenerateButtonLayoutSync() {
-  syncGenerateButtonPlacement();
-  if (!stackedControlsQuery) return;
+function syncPrimaryActionControlsPlacement() {
+  const headerActionsSlot = getProgressionHeaderActionsSlot();
+  const targetSlot = compactActionControlsQuery?.matches && headerActionsSlot
+    ? headerActionsSlot
+    : elements.controlActionsSlot;
+  if (!targetSlot || elements.actionControls.parentElement === targetSlot) return;
+  targetSlot.append(elements.actionControls);
+}
 
-  const handleChange = () => syncGenerateButtonPlacement();
-  if (typeof stackedControlsQuery.addEventListener === 'function') {
-    stackedControlsQuery.addEventListener('change', handleChange);
+function installActionControlsLayoutSync() {
+  syncPrimaryActionControlsPlacement();
+  if (!compactActionControlsQuery) return;
+
+  const handleChange = () => {
+    syncPrimaryActionControlsPlacement();
+    syncProgressionHeaderActionsLayout();
+  };
+  if (typeof compactActionControlsQuery.addEventListener === 'function') {
+    compactActionControlsQuery.addEventListener('change', handleChange);
     return;
   }
 
-  if (typeof stackedControlsQuery.addListener === 'function') {
-    stackedControlsQuery.addListener(handleChange);
+  if (typeof compactActionControlsQuery.addListener === 'function') {
+    compactActionControlsQuery.addListener(handleChange);
   }
 }
 
@@ -557,27 +565,36 @@ function syncRhythmControlsFromState() {
 function syncProgressionHeaderActionsLayout() {
   const header = elements.progressionKeyDisplay?.querySelector('.progression-key-header');
   const title = header?.querySelector('.progression-key-title');
-  const actions = header?.querySelector('.progression-header-actions');
-  if (!(header instanceof HTMLElement) || !(title instanceof HTMLElement) || !(actions instanceof HTMLElement)) {
+  const actionsSlot = getProgressionHeaderActionsSlot();
+  const controls = actionsSlot?.querySelector('.primary-action-controls');
+  if (!(header instanceof HTMLElement) || !(title instanceof HTMLElement) || !(actionsSlot instanceof HTMLElement)) {
     return;
   }
 
-  if (window.getComputedStyle(actions).display === 'none') {
+  if (!(controls instanceof HTMLElement)) {
+    header.style.removeProperty('--progression-header-actions-left');
+    header.style.removeProperty('--progression-header-title-max');
+    return;
+  }
+
+  if (window.getComputedStyle(actionsSlot).display === 'none') {
     header.style.removeProperty('--progression-header-actions-left');
     header.style.removeProperty('--progression-header-title-max');
     return;
   }
 
   const headerWidth = header.clientWidth;
-  const actionsWidth = actions.offsetWidth;
+  const actionsWidth = actionsSlot.offsetWidth;
   if (!headerWidth || !actionsWidth) return;
 
   const gap = 10;
-  const centeredLeft = Math.max(0, (headerWidth - actionsWidth) / 2);
   const maxLeft = Math.max(0, headerWidth - actionsWidth);
   const titleWidth = title.scrollWidth;
-  const shiftedLeft = Math.max(centeredLeft, titleWidth + gap);
-  const actionsLeft = Math.min(shiftedLeft, maxLeft);
+  const centeredLeft = Math.max(0, (headerWidth - actionsWidth) / 2);
+  const minLeft = titleWidth + gap;
+  const actionsLeft = narrowActionControlsQuery?.matches
+    ? maxLeft
+    : Math.min(Math.max(centeredLeft, minLeft), maxLeft);
   const titleMax = Math.max(0, actionsLeft - gap);
 
   header.style.setProperty('--progression-header-actions-left', `${actionsLeft}px`);
@@ -606,34 +623,6 @@ function formatSwapShapeLabel(selectedIndex, totalCandidates, preferredIndex = 0
   if (totalCandidates < 2) return 'Only shape';
   const counter = `${getSwapShapeCyclePosition(selectedIndex, preferredIndex, totalCandidates)}/${totalCandidates}`;
   return useCompactSwapShapeLabel() ? `Swap (${counter})` : `Swap shape (${counter})`;
-}
-
-function renderTransportControlsMarkup({ className = '', wrap = true } = {}) {
-  const controlsMarkup = `
-    <label class="transport-toggle">
-      <input type="checkbox" data-transport-toggle="drums" ${state.playDrums ? 'checked' : ''} />
-      <span>Drums</span>
-    </label>
-    <label class="transport-toggle">
-      <input type="checkbox" data-transport-toggle="chords" ${state.playChords ? 'checked' : ''} />
-      <span>Chords</span>
-    </label>
-    <button
-      class="transport-button"
-      type="button"
-      data-transport-button
-      aria-pressed="${audioEngine.isPlaying ? 'true' : 'false'}"
-      ${!state.playDrums && !state.playChords ? 'disabled' : ''}
-    >
-      ${audioEngine.isPlaying ? 'Stop' : 'Play'}
-    </button>
-  `;
-
-  if (!wrap) return controlsMarkup;
-
-  const classes = ['action-cluster', 'rhythm-actions'];
-  if (className) classes.push(className);
-  return `<div class="${classes.join(' ')}">${controlsMarkup}</div>`;
 }
 
 function renderChordCardMarkup(
@@ -1141,6 +1130,7 @@ function renderEmptyProgression({
   audioEngine.setChordSequence([]);
   elements.progressionKeyDisplay.innerHTML = '';
   elements.progressionKeyDisplay.classList.add('is-hidden');
+  syncPrimaryActionControlsPlacement();
   elements.progressionGrid.classList.add('progression-grid-empty');
   elements.progressionGrid.innerHTML = `
     <article class="chord-card empty-state-card">
@@ -1190,18 +1180,10 @@ function renderProgression() {
   elements.progressionKeyDisplay.innerHTML = `
     <div class="progression-key-header">
       <strong class="progression-key-title">${formatKeyLabel(state.progression.keyRoot, state.progression.mode)}</strong>
-      <div class="progression-header-actions">
-        <button
-          class="generate-button progression-generate-button"
-          type="button"
-          data-generate-button="progression-header"
-        >
-          Generate
-        </button>
-        ${renderTransportControlsMarkup({ wrap: false })}
-      </div>
+      <div class="progression-header-actions" data-progression-header-actions></div>
     </div>
   `;
+  syncPrimaryActionControlsPlacement();
   elements.progressionGrid.innerHTML = state.progression.chords.map((chord, index) => {
     const shape = selectedShapes.selected[index];
     return renderChordCardMarkup(chord, shape, {
@@ -1307,11 +1289,6 @@ function refreshProgression(rebuildStrategy = 'preserve') {
 function attachEventListeners() {
   syncTransportMode();
   elements.generateButton.addEventListener('click', regenerateProgression);
-  elements.progressionKeyDisplay.addEventListener('click', (event) => {
-    const button = event.target.closest('[data-generate-button="progression-header"]');
-    if (!button) return;
-    regenerateProgression();
-  });
 
   elements.keyRootSelect.addEventListener('change', () => {
     state.keyRoot = elements.keyRootSelect.value === 'random'
@@ -1463,7 +1440,7 @@ async function init() {
   syncTempo(state.tempo);
   syncTransportMode();
   installAudioPrimer();
-  installGenerateButtonLayoutSync();
+  installActionControlsLayoutSync();
   installTooltipDismissal();
   installSelectionSuppression();
   installDiagramZoomInteractions();
@@ -1476,11 +1453,14 @@ async function init() {
   // Some browsers restore prior form control values after module init.
   window.requestAnimationFrame(() => syncRhythmControlsFromState());
   window.setTimeout(() => syncRhythmControlsFromState(), 0);
-  window.addEventListener('resize', syncProgressionHeaderActionsLayout);
+  window.addEventListener('resize', () => {
+    syncPrimaryActionControlsPlacement();
+    syncProgressionHeaderActionsLayout();
+  });
 }
 
 window.addEventListener('pageshow', () => {
-  syncGenerateButtonPlacement();
+  syncPrimaryActionControlsPlacement();
   syncRhythmControlsFromState();
   syncProgressionHeaderActionsLayout();
   void restoreTransportAfterBackground();
