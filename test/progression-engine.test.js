@@ -204,6 +204,40 @@ test('getFeasibleKeyRoots reflects open-chord-friendly keys for the current sett
   assert.ok(!feasibleRoots.includes(10), 'Expected Bb to be unavailable for open chords');
 });
 
+test('open chords plus sevenths makes E major feasible via B7 without changing theory rules', async () => {
+  const library = await loadLibrary();
+  const feasibleRoots = getFeasibleKeyRoots(
+    {
+      keyLocked: false,
+      keyRoot: 0,
+      modePreference: 'major',
+      enabledShapeTypes: new Set(['open']),
+      enabledFlavorOptions: new Set(['seventh'])
+    },
+    library
+  );
+
+  assert.ok(feasibleRoots.includes(4), 'Expected E to be available for open chords when sevenths are enabled');
+
+  const progression = generateProgression(
+    {
+      keyLocked: true,
+      keyRoot: 4,
+      modePreference: 'major',
+      enabledShapeTypes: new Set(['open']),
+      enabledFlavorOptions: new Set(['seventh'])
+    },
+    library,
+    () => 0
+  );
+
+  assert.equal(progression.warning, '');
+  assert.deepEqual(
+    progression.chords.map((chord) => chord.id),
+    ['E:maj', 'A:maj', 'B:7', 'E:maj']
+  );
+});
+
 test('open and barre chord shapes generate playable progressions across all keys and modes', async () => {
   const library = await loadLibrary();
 
